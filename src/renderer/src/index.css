@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import 'tailwindcss';
+@plugin "tailwindcss-animate";
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* macOS drag region for frameless window */
+.drag-region {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Hide scrollbar visually but keep scroll */
+::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes row-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes row-exit {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-5px); }
+}
+
+.row-enter { animation: row-enter 200ms ease both; }
+.row-exit  { animation: row-exit  180ms ease both; }
+
+@theme inline {
+  --font-sans: 'Inter', -apple-system, sans-serif;
+
+  --color-background: rgba(252, 252, 252, 0.92);
+  --color-foreground: oklch(0.14 0 0);
+  --color-border: oklch(0.91 0 0);
+  --color-muted: oklch(0.97 0 0);
+  --color-muted-foreground: oklch(0.52 0 0);
+  --color-accent: oklch(0.96 0 0);
+  --color-accent-foreground: oklch(0.14 0 0);
+  --color-destructive: oklch(0.56 0.21 27);
+  --color-ring: oklch(0.70 0 0);
+
+  --color-status-running: oklch(0.72 0.19 145);
+  --color-status-stopping: oklch(0.72 0.15 55);
+
+  --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
