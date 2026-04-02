@@ -1,26 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Code2, Copy, ExternalLink, Folder, MoreHorizontal, Rocket, Sparkles, Terminal, Wind } from 'lucide-react'
+import { Code2, Copy, ExternalLink, Folder, Globe, MoreHorizontal, Rocket, Sparkles, Terminal } from 'lucide-react'
 import type { DeployTarget, DeployRecord, DeployInfo, DeployState } from '../hooks/useDeployState'
 
-export interface InstalledTools {
-  vscode: boolean
-  cursor: boolean
-  windsurf: boolean
-  claude: boolean
-  iterm2: boolean
-}
+export type ToolCategory = 'editor' | 'terminal' | 'ai' | 'other'
 
-interface Action {
-  label: string
-  icon: React.ReactNode
-  actionKey: string
-  show: boolean
+export interface DetectedTool {
+  id: string
+  name: string
+  category: ToolCategory
+  available: boolean
+  hasCli: boolean
+  auth?: {
+    loggedIn: boolean
+    email?: string
+    plan?: string
+  }
 }
 
 interface QuickActionsMenuProps {
   cwd: string
-  tools: InstalledTools
+  tools: DetectedTool[]
   deployState?: DeployState
   onDeploy: (cwd: string, target: DeployTarget) => void
   onSetLastDeploy: (cwd: string, record: DeployRecord) => void
@@ -47,6 +47,32 @@ const DEPLOY_LABELS: Record<DeployTarget, string> = {
   vercel: 'Deploy to Vercel',
   railway: 'Deploy to Railway',
   netlify: 'Deploy to Netlify'
+}
+
+const TOOL_ICONS: Record<string, (size: number) => React.ReactNode> = {
+  finder: (s) => <Folder size={s} />,
+  vscode: (s) => <Code2 size={s} />,
+  cursor: (s) => <Code2 size={s} />,
+  windsurf: (s) => <Code2 size={s} />,
+  zed: (s) => <Code2 size={s} />,
+  xcode: (s) => <Code2 size={s} />,
+  terminal: (s) => <Terminal size={s} />,
+  iterm2: (s) => <Terminal size={s} />,
+  ghostty: (s) => <Terminal size={s} />,
+  warp: (s) => <Terminal size={s} />,
+  claude: (s) => <Sparkles size={s} />,
+  codex: (s) => <Sparkles size={s} />,
+  conductor: (s) => <Sparkles size={s} />,
+  'github-desktop': (s) => <Globe size={s} />,
+}
+
+function toolLabel(tool: DetectedTool): string {
+  if (tool.category === 'terminal') return `Open ${tool.name} here`
+  if (tool.category === 'ai') {
+    const suffix = tool.auth?.loggedIn === false ? ' (not logged in)' : ''
+    return `Open ${tool.name} here${suffix}`
+  }
+  return `Open in ${tool.name}`
 }
 
 function timeAgo(ts: number): string {
@@ -76,28 +102,21 @@ export function QuickActionsMenu({ cwd, tools, deployState, onDeploy, onSetLastD
   const [deployInfo, setDeployInfo] = useState<DeployInfo | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
-  const editorActions: Action[] = [
-    { label: 'Open in Finder', icon: <Folder size={12} />, actionKey: 'finder', show: true },
-    { label: 'Open in VS Code', icon: <Code2 size={12} />, actionKey: 'vscode', show: tools.vscode },
-    { label: 'Open in Cursor', icon: <Code2 size={12} />, actionKey: 'cursor', show: tools.cursor },
-    { label: 'Open in Windsurf', icon: <Wind size={12} />, actionKey: 'windsurf', show: tools.windsurf },
-    { label: 'Open terminal here', icon: <Terminal size={12} />, actionKey: 'terminal', show: true },
-    { label: 'Open Claude Code here', icon: <Sparkles size={12} />, actionKey: 'claude', show: tools.claude }
-  ]
-  const visibleActions = editorActions.filter(a => a.show)
+  // Tools arrive pre-sorted by MRU from main process — render as flat list
+  const totalItems = tools.length
 
   const lastDeploy = deployState?.lastDeploy ?? deployInfo?.lastDeploy ?? null
   const isDeploying = deployState?.status === 'deploying'
   const anyCliInstalled = deployInfo
     ? deployInfo.installedCLIs.vercel || deployInfo.installedCLIs.railway || deployInfo.installedCLIs.netlify
-    : true // optimistic until info loads
+    : true
 
   const toggle = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (!open && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect()
       const deployRows = 1 + (lastDeploy ? 2 : 0)
-      const menuH = (visibleActions.length + deployRows + 1) * 28 + 20
+      const menuH = (totalItems + deployRows + 1) * 28 + 20
       const spaceBelow = window.innerHeight - rect.bottom
       const above = spaceBelow < menuH && rect.top > menuH
       setPos({
@@ -195,23 +214,26 @@ export function QuickActionsMenu({ cwd, tools, deployState, onDeploy, onSetLastD
               zIndex: 9999
             }}
           >
-            {/* Editor / terminal actions */}
-            {visibleActions.map(action => (
-              <button
-                key={action.actionKey}
-                onClick={() => run(action.actionKey)}
-                style={menuItemStyle}
-                onMouseEnter={hoverOn}
-                onMouseLeave={hoverOff}
-              >
-                <span style={{ color: 'var(--color-muted-foreground)', display: 'flex' }}>
-                  {action.icon}
-                </span>
-                {action.label}
-              </button>
-            ))}
+            {/* Tools sorted by most recently used */}
+            {tools.map(tool => {
+              const iconFn = TOOL_ICONS[tool.id]
+              return (
+                <button
+                  key={tool.id}
+                  onClick={() => run(tool.id)}
+                  style={menuItemStyle}
+                  onMouseEnter={hoverOn}
+                  onMouseLeave={hoverOff}
+                >
+                  <span style={{ color: 'var(--color-muted-foreground)', display: 'flex' }}>
+                    {iconFn ? iconFn(12) : <Code2 size={12} />}
+                  </span>
+                  {toolLabel(tool)}
+                </button>
+              )
+            })}
 
-            {/* Separator */}
+            {/* Separator before deploy */}
             <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 6px' }} />
 
             {/* Deploy button */}

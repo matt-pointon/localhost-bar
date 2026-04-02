@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 
-export type DevTool = 'cursor' | 'claude' | 'windsurf' | 'copilot' | 'codex' | 'aider'
-
 export interface GitStatus {
   branch: string
   changes: number
@@ -15,7 +13,6 @@ export interface ServiceInfo {
   command: string
   address: string
   status: 'running' | 'stopping' | 'exiting'
-  tools: DevTool[]
   cwd: string | null
   args: string | null
   git: GitStatus | null
@@ -25,7 +22,6 @@ export interface OfflineService {
   port: number
   name: string
   command: string
-  tools: DevTool[]
   cwd: string | null
   args: string | null
   exiting?: boolean
@@ -73,7 +69,6 @@ export function useServices() {
             port: svc.port,
             name: svc.name,
             command: svc.command,
-            tools: svc.tools,
             cwd: svc.cwd,
             args: svc.args
           })

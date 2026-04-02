@@ -1,22 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useServices } from './hooks/useServices'
 import { useDeployState } from './hooks/useDeployState'
+import { useTasks } from './hooks/useTasks'
 import { Header } from './components/Header'
 import { ServiceList } from './components/ServiceList'
 import { EmptyState } from './components/EmptyState'
 import { OfflineRow } from './components/OfflineRow'
-import type { InstalledTools } from './components/QuickActionsMenu'
-
-const DEFAULT_TOOLS: InstalledTools = {
-  vscode: false, cursor: false, windsurf: false, claude: false, iterm2: false
-}
+import type { DetectedTool } from './components/QuickActionsMenu'
 
 export default function App() {
-  const [installedTools, setInstalledTools] = useState<InstalledTools>(DEFAULT_TOOLS)
+  const [availableTools, setAvailableTools] = useState<DetectedTool[]>([])
   const { states: deployStates, deploy, setLastDeploy } = useDeployState()
 
   useEffect(() => {
-    window.electronAPI.getInstalledTools().then(setInstalledTools)
+    window.electronAPI.getAvailableTools().then(setAvailableTools)
   }, [])
 
   const {
@@ -30,6 +27,12 @@ export default function App() {
     restartService,
     dismissOffline
   } = useServices()
+
+  const cwds = useMemo(
+    () => services.map(s => s.cwd).filter((c): c is string => c !== null),
+    [services]
+  )
+  const { tasks, addTask, removeTask } = useTasks(cwds)
 
   const hasRunning = services.length > 0
   const hasOffline = offlineServices.length > 0
@@ -63,10 +66,13 @@ export default function App() {
               services={services}
               onOpen={openService}
               onKill={killService}
-              installedTools={installedTools}
+              availableTools={availableTools}
               deployStates={deployStates}
               onDeploy={deploy}
               onSetLastDeploy={setLastDeploy}
+              tasks={tasks}
+              onAddTask={addTask}
+              onRemoveTask={removeTask}
             />
             )}
 

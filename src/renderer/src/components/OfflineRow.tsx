@@ -1,6 +1,5 @@
 import { Folder, Play, X } from 'lucide-react'
 import type { OfflineService } from '../hooks/useServices'
-import { ToolIcons } from './ToolIcons'
 import { useState } from 'react'
 
 interface OfflineRowProps {
@@ -45,9 +44,6 @@ export function OfflineRow({ service, onRestart, onDismiss }: OfflineRowProps) {
           {service.command}
         </p>
       </div>
-
-      {/* Tool icons */}
-      <ToolIcons tools={service.tools} />
 
       {/* Port badge */}
       <span

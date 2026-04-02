@@ -60,6 +60,30 @@ src/
 - **Portal dropdowns** — QuickActionsMenu renders into `document.body` to avoid overflow clipping
 - **Retina tray icon** — `build/icon.png` (16×16) + `build/icon@2x.png` (32×32) with `setTemplateImage`
 
+## Plans & documentation
+
+- Project plans and documentation go in `/docs/` as markdown `.md` files
+- When creating or updating a plan, save it to `docs/` (e.g. `docs/plan.md`, `docs/feature-xyz.md`)
+- Full project plan: `docs/PROJECT_PLAN.md`
+
+## Project status
+
+Phase 1 (working prototype) and Phase 3 (deploy integration) are complete.
+Phase 2 is mostly done — remaining work:
+
+- [ ] Port conflict detection and warning
+- [ ] Stack tags per project (top 3: framework, db, UI) from package.json/pyproject.toml/Cargo.toml
+- [ ] Project tasks/todos (pivoted from notes — accordion UI under each service, animated, writes to AI config files)
+
+Nice to have:
+- [ ] Bolt / Lovable / v0 tool detection
+- [ ] Broader tech stack detection beyond deploy-focused parsing
+
+## Change log
+
+- **2026-04-01** — Created project plan (`docs/PROJECT_PLAN.md`). Audited codebase against original plan: Phase 1 complete (auto-discovery replaced config file approach), Phase 2 mostly done (git status works, stack tags/port conflicts/notes outstanding), Phase 3 deploy integration complete (Vercel/Railway/Netlify with URL history).
+- **2026-04-01** — Built notes v1 feature (single note per project, written to AI config files with fenced markers). User pivoted to tasks/todos instead: accordion UI under each service row, checklist format, animated additions, still writes to AI config files. Notes v1 code exists but needs refactoring into tasks. See `docs/vibestatus-notes.md` for full plan.
+
 ## Running
 
 ```bash
