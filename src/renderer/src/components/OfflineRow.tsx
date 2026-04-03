@@ -14,12 +14,18 @@ export function OfflineRow({ service, onRestart, onDismiss }: OfflineRowProps) {
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-2.5 ${service.exiting ? 'row-exit' : 'row-enter'}`}
+      className={`${service.exiting ? 'row-exit' : 'row-enter'}`}
+    >
+    <div
+      className="flex items-center gap-3 px-4 py-2.5"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        background: hovered ? 'var(--color-accent)' : 'transparent',
+        background: hovered ? 'rgba(0,0,0,0.35)' : 'rgba(15,15,15,0.75)',
+        backdropFilter: 'blur(50px) saturate(1.4)',
+        WebkitBackdropFilter: 'blur(50px) saturate(1.4)',
         transition: 'background 100ms',
+        borderBottom: '1px solid rgba(255,255,255,0.04)',
         opacity: 0.6
       }}
     >
@@ -69,7 +75,7 @@ export function OfflineRow({ service, onRestart, onDismiss }: OfflineRowProps) {
             style={{ color: 'var(--color-muted-foreground)' }}
             onMouseEnter={e => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-foreground)'
-              ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'
+              ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--color-hover-overlay)'
             }}
             onMouseLeave={e => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-muted-foreground)'
@@ -87,7 +93,7 @@ export function OfflineRow({ service, onRestart, onDismiss }: OfflineRowProps) {
             style={{ color: 'var(--color-muted-foreground)' }}
             onMouseEnter={e => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-status-running)'
-              ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(34,197,94,0.1)'
+              ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--color-success-overlay)'
             }}
             onMouseLeave={e => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-muted-foreground)'
@@ -104,7 +110,7 @@ export function OfflineRow({ service, onRestart, onDismiss }: OfflineRowProps) {
           style={{ color: 'var(--color-muted-foreground)' }}
           onMouseEnter={e => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-foreground)'
-            ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'
+            ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--color-hover-overlay)'
           }}
           onMouseLeave={e => {
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-muted-foreground)'
@@ -114,6 +120,7 @@ export function OfflineRow({ service, onRestart, onDismiss }: OfflineRowProps) {
           <X size={12} />
         </button>
       </div>
+    </div>
     </div>
   )
 }

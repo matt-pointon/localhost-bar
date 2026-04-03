@@ -10,6 +10,8 @@ import { getAllTasks, addTask, toggleTask, removeTask, clearTasks, syncFromConfi
 import { writeTasksToConfigs, clearTasksFromConfigs } from './tasks/config-writer'
 import { readTasksFromConfigs } from './tasks/config-reader'
 import { getGitStatus } from './port-scanner/git-status'
+import { gitCommit, gitPull, gitCreatePR, isGhInstalled, getDefaultBranch } from './git-actions'
+import { getDailyStats } from './stats/collector'
 
 // ── Tool usage tracking (MRU order) ─────────────────────────────────────────
 function getUsagePath(): string {
@@ -212,6 +214,33 @@ export function registerIpcHandlers(): void {
     clearTasks(cwd)
     clearTasksFromConfigs(cwd)
     return { success: true }
+  })
+
+  // ── Git actions ────────────────────────────────────────────────────────────
+
+  ipcMain.handle('git:commit', (_event, { cwd, message }: { cwd: string; message: string }) => {
+    return gitCommit(cwd, message)
+  })
+
+  ipcMain.handle('git:pull', (_event, { cwd }: { cwd: string }) => {
+    return gitPull(cwd)
+  })
+
+  ipcMain.handle('git:create-pr', (_event, { cwd }: { cwd: string }) => {
+    return gitCreatePR(cwd)
+  })
+
+  ipcMain.handle('git:info', (_event, { cwd }: { cwd: string }) => {
+    return {
+      ghInstalled: isGhInstalled(),
+      defaultBranch: getDefaultBranch(cwd)
+    }
+  })
+
+  // ── Stats ───────────────────────────────────────────────────────────────────
+
+  ipcMain.handle('stats:get-daily', (_event, cwds: string[]) => {
+    return getDailyStats(cwds)
   })
 
   ipcMain.handle('tasks:sync', (_event, cwd: string) => {

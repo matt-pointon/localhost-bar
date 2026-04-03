@@ -28,7 +28,9 @@ export function ServiceRow({ service, onOpen, onKill, availableTools, deployStat
   const doneCount = tasks.filter(t => t.done).length
 
   return (
-    <div className={service.status === 'exiting' ? 'row-exit' : 'row-enter'}>
+    <div
+      className={service.status === 'exiting' ? 'row-exit' : 'row-enter'}
+    >
       {/* Main clickable row */}
       <div
         role="button"
@@ -40,8 +42,11 @@ export function ServiceRow({ service, onOpen, onKill, availableTools, deployStat
         style={{
           opacity: isStopping ? 0.5 : 1,
           cursor: isStopping ? 'not-allowed' : 'pointer',
-          background: hovered ? 'var(--color-accent)' : 'transparent',
-          transition: 'background 100ms'
+          background: hovered ? 'rgba(0,0,0,0.35)' : 'rgba(15,15,15,0.75)',
+          backdropFilter: 'blur(50px) saturate(1.4)',
+          WebkitBackdropFilter: 'blur(50px) saturate(1.4)',
+          transition: 'background 100ms',
+          borderBottom: '1px solid rgba(255,255,255,0.04)'
         }}
         className="flex items-center gap-3 px-4 py-2.5"
       >
@@ -76,7 +81,7 @@ export function ServiceRow({ service, onOpen, onKill, availableTools, deployStat
               {service.git.changes > 0 && (
                 <>
                   <span>·</span>
-                  <span style={{ color: '#f59e0b' }}>{service.git.changes} change{service.git.changes !== 1 ? 's' : ''}</span>
+                  <span style={{ color: 'var(--color-warning)' }}>{service.git.changes} change{service.git.changes !== 1 ? 's' : ''}</span>
                 </>
               )}
               {service.git.lastCommit && (
@@ -110,6 +115,7 @@ export function ServiceRow({ service, onOpen, onKill, availableTools, deployStat
             <QuickActionsMenu
               cwd={service.cwd}
               tools={availableTools}
+              git={service.git}
               deployState={deployState}
               onDeploy={onDeploy}
               onSetLastDeploy={onSetLastDeploy}
@@ -124,13 +130,13 @@ export function ServiceRow({ service, onOpen, onKill, availableTools, deployStat
                 onToggleExpand()
               }}
               className="p-1 rounded transition-colors flex items-center gap-0.5"
-              style={{ color: taskCount > 0 ? '#8b5cf6' : 'var(--color-muted-foreground)' }}
+              style={{ color: taskCount > 0 ? 'var(--color-task-accent)' : 'var(--color-muted-foreground)' }}
               onMouseEnter={e => {
-                ;(e.currentTarget as HTMLButtonElement).style.color = taskCount > 0 ? '#7c3aed' : 'var(--color-foreground)'
-                ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'
+                ;(e.currentTarget as HTMLButtonElement).style.color = taskCount > 0 ? 'var(--color-task-accent-hover)' : 'var(--color-foreground)'
+                ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--color-hover-overlay)'
               }}
               onMouseLeave={e => {
-                ;(e.currentTarget as HTMLButtonElement).style.color = taskCount > 0 ? '#8b5cf6' : 'var(--color-muted-foreground)'
+                ;(e.currentTarget as HTMLButtonElement).style.color = taskCount > 0 ? 'var(--color-task-accent)' : 'var(--color-muted-foreground)'
                 ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
               }}
             >
@@ -155,7 +161,7 @@ export function ServiceRow({ service, onOpen, onKill, availableTools, deployStat
               style={{ color: 'var(--color-muted-foreground)' }}
               onMouseEnter={e => {
                 ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-foreground)'
-                ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'
+                ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--color-hover-overlay)'
               }}
               onMouseLeave={e => {
                 ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-muted-foreground)'
@@ -175,7 +181,7 @@ export function ServiceRow({ service, onOpen, onKill, availableTools, deployStat
             style={{ color: 'var(--color-muted-foreground)' }}
             onMouseEnter={e => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-foreground)'
-              ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'
+              ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--color-hover-overlay)'
             }}
             onMouseLeave={e => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-muted-foreground)'
@@ -195,7 +201,7 @@ export function ServiceRow({ service, onOpen, onKill, availableTools, deployStat
             style={{ color: 'var(--color-muted-foreground)' }}
             onMouseEnter={e => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-destructive)'
-              ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(220,38,38,0.08)'
+              ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--color-destructive-overlay)'
             }}
             onMouseLeave={e => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-muted-foreground)'

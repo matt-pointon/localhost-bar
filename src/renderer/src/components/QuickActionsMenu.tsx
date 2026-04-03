@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Code2, Copy, ExternalLink, Folder, Globe, MoreHorizontal, Rocket, Sparkles, Terminal } from 'lucide-react'
+import { Check, Code2, Copy, Download, ExternalLink, Folder, GitCommitHorizontal, GitPullRequest, Globe, Loader2, MoreHorizontal, Rocket, Sparkles, Terminal } from 'lucide-react'
 import type { DeployTarget, DeployRecord, DeployInfo, DeployState } from '../hooks/useDeployState'
+import type { GitStatus } from '../../../preload/index'
 
 export type ToolCategory = 'editor' | 'terminal' | 'ai' | 'other'
 
@@ -21,6 +22,7 @@ export interface DetectedTool {
 interface QuickActionsMenuProps {
   cwd: string
   tools: DetectedTool[]
+  git: GitStatus | null
   deployState?: DeployState
   onDeploy: (cwd: string, target: DeployTarget) => void
   onSetLastDeploy: (cwd: string, record: DeployRecord) => void
@@ -96,10 +98,20 @@ function hoverOff(e: React.MouseEvent<HTMLButtonElement>) {
   e.currentTarget.style.background = 'transparent'
 }
 
-export function QuickActionsMenu({ cwd, tools, deployState, onDeploy, onSetLastDeploy }: QuickActionsMenuProps) {
+type GitActionState = 'idle' | 'loading' | 'success' | 'error'
+
+export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSetLastDeploy }: QuickActionsMenuProps) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ x: 0, y: 0 })
   const [deployInfo, setDeployInfo] = useState<DeployInfo | null>(null)
+  const [gitInfo, setGitInfo] = useState<{ ghInstalled: boolean; defaultBranch: string | null } | null>(null)
+  const [commitState, setCommitState] = useState<GitActionState>('idle')
+  const [commitMsg, setCommitMsg] = useState('')
+  const [showCommitInput, setShowCommitInput] = useState(false)
+  const [pullState, setPullState] = useState<GitActionState>('idle')
+  const [prState, setPrState] = useState<GitActionState>('idle')
+  const [gitError, setGitError] = useState<string | null>(null)
+  const commitInputRef = useRef<HTMLInputElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
   // Tools arrive pre-sorted by MRU from main process — render as flat list
@@ -111,18 +123,33 @@ export function QuickActionsMenu({ cwd, tools, deployState, onDeploy, onSetLastD
     ? deployInfo.installedCLIs.vercel || deployInfo.installedCLIs.railway || deployInfo.installedCLIs.netlify
     : true
 
+  const hasGit = git !== null
+  const hasChanges = git !== null && git.changes > 0
+  const isDefaultBranch = git !== null && gitInfo !== null && git.branch === gitInfo.defaultBranch
+  const canCreatePR = hasGit && gitInfo?.ghInstalled && !isDefaultBranch
+
   const toggle = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (!open && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect()
       const deployRows = 1 + (lastDeploy ? 2 : 0)
-      const menuH = (totalItems + deployRows + 1) * 28 + 20
+      const gitRows = hasGit ? 3 : 0 // commit + pull + PR (max)
+      const menuH = (totalItems + deployRows + gitRows + 2) * 28 + 20
       const spaceBelow = window.innerHeight - rect.bottom
       const above = spaceBelow < menuH && rect.top > menuH
       setPos({
         x: rect.right - 220,
         y: above ? rect.top - menuH - 4 : rect.bottom + 4
       })
+    }
+    if (open) {
+      // Reset git action states when closing
+      setShowCommitInput(false)
+      setCommitMsg('')
+      setCommitState('idle')
+      setPullState('idle')
+      setPrState('idle')
+      setGitError(null)
     }
     setOpen(v => !v)
   }
@@ -133,7 +160,57 @@ export function QuickActionsMenu({ cwd, tools, deployState, onDeploy, onSetLastD
       setDeployInfo(info)
       if (info.lastDeploy) onSetLastDeploy(cwd, info.lastDeploy)
     })
-  }, [open, cwd, onSetLastDeploy])
+    if (hasGit) {
+      window.electronAPI.gitGetInfo(cwd).then(setGitInfo)
+    }
+  }, [open, cwd, hasGit, onSetLastDeploy])
+
+  useEffect(() => {
+    if (showCommitInput && commitInputRef.current) {
+      commitInputRef.current.focus()
+    }
+  }, [showCommitInput])
+
+  const handleCommit = async () => {
+    if (!commitMsg.trim()) return
+    setCommitState('loading')
+    setGitError(null)
+    const result = await window.electronAPI.gitCommit(cwd, commitMsg.trim())
+    if (result.success) {
+      setCommitState('success')
+      setCommitMsg('')
+      setTimeout(() => { setShowCommitInput(false); setCommitState('idle') }, 1000)
+    } else {
+      setCommitState('error')
+      setGitError(result.error?.split('\n')[0]?.slice(0, 60) ?? 'Commit failed')
+    }
+  }
+
+  const handlePull = async () => {
+    setPullState('loading')
+    setGitError(null)
+    const result = await window.electronAPI.gitPull(cwd)
+    if (result.success) {
+      setPullState('success')
+      setTimeout(() => setPullState('idle'), 1500)
+    } else {
+      setPullState('error')
+      setGitError(result.error?.split('\n')[0]?.slice(0, 60) ?? 'Pull failed')
+    }
+  }
+
+  const handleCreatePR = async () => {
+    setPrState('loading')
+    setGitError(null)
+    const result = await window.electronAPI.gitCreatePR(cwd)
+    if (result.success) {
+      setPrState('success')
+      setTimeout(() => { setPrState('idle'); setOpen(false) }, 1500)
+    } else {
+      setPrState('error')
+      setGitError(result.error?.split('\n')[0]?.slice(0, 60) ?? 'PR creation failed')
+    }
+  }
 
   useEffect(() => {
     if (!open) return
@@ -186,7 +263,7 @@ export function QuickActionsMenu({ cwd, tools, deployState, onDeploy, onSetLastD
         style={{ color: 'var(--color-muted-foreground)' }}
         onMouseEnter={e => {
           ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-foreground)'
-          ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'
+          ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--color-hover-overlay)'
         }}
         onMouseLeave={e => {
           ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-muted-foreground)'
@@ -205,11 +282,12 @@ export function QuickActionsMenu({ cwd, tools, deployState, onDeploy, onSetLastD
               left: pos.x,
               top: pos.y,
               width: 220,
-              background: 'rgba(252,252,252,0.96)',
-              backdropFilter: 'blur(12px)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 8,
-              boxShadow: '0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)',
+              background: 'rgba(8, 8, 8, 0.88)',
+              backdropFilter: 'blur(60px) saturate(1.2)',
+              WebkitBackdropFilter: 'blur(60px) saturate(1.2)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 10,
+              boxShadow: '0 12px 40px rgba(0,0,0,0.7), 0 4px 12px rgba(0,0,0,0.5), inset 0 0.5px 0 rgba(255,255,255,0.06)',
               padding: '4px',
               zIndex: 9999
             }}
@@ -309,6 +387,136 @@ export function QuickActionsMenu({ cwd, tools, deployState, onDeploy, onSetLastD
                   <span style={{ display: 'flex', flexShrink: 0 }}><Copy size={11} /></span>
                   Copy deploy URL
                 </button>
+              </>
+            )}
+
+            {/* Git actions */}
+            {hasGit && (
+              <>
+                <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 6px' }} />
+
+                {/* Commit */}
+                {hasChanges && !showCommitInput && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowCommitInput(true) }}
+                    disabled={commitState === 'loading'}
+                    style={menuItemStyle}
+                    onMouseEnter={hoverOn}
+                    onMouseLeave={hoverOff}
+                  >
+                    <span style={{ color: 'var(--color-muted-foreground)', display: 'flex' }}>
+                      <GitCommitHorizontal size={12} />
+                    </span>
+                    Commit {git!.changes} change{git!.changes !== 1 ? 's' : ''}…
+                  </button>
+                )}
+
+                {showCommitInput && (
+                  <div style={{ padding: '4px 6px' }} onClick={e => e.stopPropagation()}>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <input
+                        ref={commitInputRef}
+                        type="text"
+                        value={commitMsg}
+                        onChange={e => setCommitMsg(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') handleCommit()
+                          if (e.key === 'Escape') { setShowCommitInput(false); setCommitMsg('') }
+                        }}
+                        placeholder="Commit message…"
+                        disabled={commitState === 'loading'}
+                        style={{
+                          flex: 1,
+                          fontSize: 11,
+                          padding: '4px 6px',
+                          border: '1px solid var(--color-border)',
+                          borderRadius: 4,
+                          background: 'transparent',
+                          color: 'var(--color-foreground)',
+                          outline: 'none',
+                          minWidth: 0
+                        }}
+                      />
+                      <button
+                        onClick={handleCommit}
+                        disabled={commitState === 'loading' || !commitMsg.trim()}
+                        style={{
+                          ...menuItemStyle,
+                          width: 'auto',
+                          padding: '4px 8px',
+                          opacity: commitState === 'loading' || !commitMsg.trim() ? 0.5 : 1,
+                          flexShrink: 0
+                        }}
+                        onMouseEnter={hoverOn}
+                        onMouseLeave={hoverOff}
+                      >
+                        {commitState === 'loading' ? <Loader2 size={12} className="animate-spin" /> :
+                         commitState === 'success' ? <Check size={12} style={{ color: 'var(--color-success)' }} /> :
+                         <GitCommitHorizontal size={12} />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Pull */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handlePull() }}
+                  disabled={pullState === 'loading'}
+                  style={{
+                    ...menuItemStyle,
+                    opacity: pullState === 'loading' ? 0.6 : 1,
+                    cursor: pullState === 'loading' ? 'default' : 'pointer'
+                  }}
+                  onMouseEnter={e => { if (pullState !== 'loading') hoverOn(e) }}
+                  onMouseLeave={hoverOff}
+                >
+                  <span style={{ color: 'var(--color-muted-foreground)', display: 'flex' }}>
+                    {pullState === 'loading' ? <Loader2 size={12} className="animate-spin" /> :
+                     pullState === 'success' ? <Check size={12} style={{ color: 'var(--color-success)' }} /> :
+                     <Download size={12} />}
+                  </span>
+                  {pullState === 'loading' ? 'Pulling…' :
+                   pullState === 'success' ? 'Pulled' :
+                   'Pull'}
+                </button>
+
+                {/* Create PR */}
+                {canCreatePR && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleCreatePR() }}
+                    disabled={prState === 'loading'}
+                    style={{
+                      ...menuItemStyle,
+                      opacity: prState === 'loading' ? 0.6 : 1,
+                      cursor: prState === 'loading' ? 'default' : 'pointer'
+                    }}
+                    onMouseEnter={e => { if (prState !== 'loading') hoverOn(e) }}
+                    onMouseLeave={hoverOff}
+                  >
+                    <span style={{ color: 'var(--color-muted-foreground)', display: 'flex' }}>
+                      {prState === 'loading' ? <Loader2 size={12} className="animate-spin" /> :
+                       prState === 'success' ? <Check size={12} style={{ color: 'var(--color-success)' }} /> :
+                       <GitPullRequest size={12} />}
+                    </span>
+                    {prState === 'loading' ? 'Creating PR…' :
+                     prState === 'success' ? 'Opened' :
+                     'Create PR'}
+                  </button>
+                )}
+
+                {/* Git error message */}
+                {gitError && (
+                  <div style={{
+                    padding: '3px 10px',
+                    fontSize: 10,
+                    color: 'var(--color-destructive)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {gitError}
+                  </div>
+                )}
               </>
             )}
           </div>,

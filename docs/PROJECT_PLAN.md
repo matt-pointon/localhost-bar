@@ -71,6 +71,19 @@ detects AI tools, shows git status, and has deploy integration.
       - [x] "Copy last deploy URL" action
 - [ ] `PROJECT_PLAN.md` generation prompt (for users to run on their own projects)
 
+### Phase 4 — Vibe coder experience [NOT STARTED]
+
+See `docs/phase-4-features.md` for detailed plans.
+
+- [ ] Dark mode (default) — swap CSS variable theme to dark, fix hardcoded light colors
+- [ ] Quick URL copy — one-click copy `localhost:<port>` from each service row
+- [ ] "Who's coding?" — detect active AI agents (Claude, Cursor, Codex, Aider) per project via process detection
+- [ ] Notifications — macOS native alerts when services crash or come online, with toggle
+- [x] Daily stats bar — commits, lines, projects, streak counter (header analytics)
+- [x] Global tool detection — single registry replacing per-project filesystem scanning
+- [x] GitHub quick actions — commit, pull, create PR from the `...` menu
+- [x] Project tasks — accordion checklist per service, syncs to AI config files
+
 ## Architecture notes
 
 - **Tray + panel**: `Tray` toggles a 340×480 frameless `BrowserWindow` with vibrancy,
@@ -89,17 +102,23 @@ detects AI tools, shows git status, and has deploy integration.
 
 ## Remaining work
 
-### Priority items
+### Phase 2 — remaining
 
 1. **Port conflict detection** — warn when multiple services bind the same port
 2. **Stack tags** — surface top 3 tech tags per project (framework, db, UI lib)
-   from `package.json` / `pyproject.toml` / `Cargo.toml`
-3. **Project tasks/todos** — per-project task list in an accordion under each service row, written to AI config files (pivoted from simple notes — see `docs/vibestatus-notes.md`)
+
+### Phase 4 — next up
+
+1. **Dark mode** (default) — biggest visual impact, smallest scope
+2. **Quick URL copy** — single component, instant utility
+3. **"Who's coding?"** — active AI agent detection per project
+4. **Notifications** — service lifecycle alerts with toggle
 
 ### Nice to have
 
 - Bolt / Lovable / v0 tool detection
 - Broader tech stack detection beyond deploy-focused parsing
+- Share card — screenshot-ready daily stats for social sharing
 - `PROJECT_PLAN.md` generation prompt for users' own projects
 
 ## Out of scope

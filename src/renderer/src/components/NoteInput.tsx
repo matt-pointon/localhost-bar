@@ -45,7 +45,7 @@ export function NoteInput({ cwd, initialText, onSave, onClear, onCancel }: NoteI
       className="w-full text-[10px] leading-tight mt-0.5 px-1 py-0.5 rounded outline-none"
       style={{
         color: 'var(--color-foreground)',
-        background: 'rgba(0,0,0,0.06)',
+        background: 'var(--color-input-bg)',
         border: '1px solid var(--color-border)',
         caretColor: 'var(--color-foreground)'
       }}

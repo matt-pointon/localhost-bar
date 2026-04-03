@@ -40,7 +40,7 @@ export function TaskInput({ cwd, onAdd, onCancel }: TaskInputProps) {
       className="w-full text-[10px] leading-tight px-1.5 py-1 rounded outline-none"
       style={{
         color: 'var(--color-foreground)',
-        background: 'rgba(0,0,0,0.04)',
+        background: 'var(--color-input-bg)',
         border: '1px solid var(--color-border)',
         caretColor: 'var(--color-foreground)'
       }}

@@ -69,6 +69,24 @@ export interface ServiceInfo {
   git: GitStatus | null
 }
 
+export interface GitActionResult {
+  success: boolean
+  error?: string
+  url?: string
+}
+
+export interface DailyStats {
+  commitsToday: number
+  linesChangedToday: number
+  activeProjects: number
+  streakDays: number
+}
+
+export interface GitInfo {
+  ghInstalled: boolean
+  defaultBranch: string | null
+}
+
 export interface ElectronAPI {
   scanPorts: () => Promise<ServiceInfo[]>
   killProcess: (pid: number) => Promise<{ success: boolean; error?: string }>
@@ -82,12 +100,17 @@ export interface ElectronAPI {
   deployGetInfo: (cwd: string) => Promise<DeployInfo>
   deployRun: (cwd: string, target: DeployTarget) => Promise<void>
   onDeployProgress: (callback: (data: DeployProgress) => void) => () => void
+  gitCommit: (cwd: string, message: string) => Promise<GitActionResult>
+  gitPull: (cwd: string) => Promise<GitActionResult>
+  gitCreatePR: (cwd: string) => Promise<GitActionResult>
+  gitGetInfo: (cwd: string) => Promise<GitInfo>
   taskGetAll: () => Promise<Record<string, TaskRecord>>
   taskAdd: (cwd: string, text: string) => Promise<{ success: boolean; task?: TaskItem }>
   taskToggle: (cwd: string, taskId: string) => Promise<{ success: boolean }>
   taskRemove: (cwd: string, taskId: string) => Promise<{ success: boolean }>
   taskClear: (cwd: string) => Promise<{ success: boolean }>
   taskSync: (cwd: string) => Promise<{ changed: boolean; tasks?: TaskItem[] }>
+  getDailyStats: (cwds: string[]) => Promise<DailyStats>
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -102,6 +125,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openUrl: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
   deployGetInfo: (cwd: string) => ipcRenderer.invoke('deploy:get-info', cwd),
   deployRun: (cwd: string, target: string) => ipcRenderer.invoke('deploy:run', { cwd, target }),
+  gitCommit: (cwd: string, message: string) => ipcRenderer.invoke('git:commit', { cwd, message }),
+  gitPull: (cwd: string) => ipcRenderer.invoke('git:pull', { cwd }),
+  gitCreatePR: (cwd: string) => ipcRenderer.invoke('git:create-pr', { cwd }),
+  gitGetInfo: (cwd: string) => ipcRenderer.invoke('git:info', { cwd }),
   onDeployProgress: (callback) => {
     const handler = (_: Electron.IpcRendererEvent, data: DeployProgress) => callback(data)
     ipcRenderer.on('deploy:progress', handler)
@@ -112,5 +139,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   taskToggle: (cwd: string, taskId: string) => ipcRenderer.invoke('tasks:toggle', { cwd, taskId }),
   taskRemove: (cwd: string, taskId: string) => ipcRenderer.invoke('tasks:remove', { cwd, taskId }),
   taskClear: (cwd: string) => ipcRenderer.invoke('tasks:clear', cwd),
-  taskSync: (cwd: string) => ipcRenderer.invoke('tasks:sync', cwd)
+  taskSync: (cwd: string) => ipcRenderer.invoke('tasks:sync', cwd),
+  getDailyStats: (cwds: string[]) => ipcRenderer.invoke('stats:get-daily', cwds)
 } satisfies ElectronAPI)

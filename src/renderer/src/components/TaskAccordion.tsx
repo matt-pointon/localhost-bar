@@ -91,7 +91,7 @@ function TaskRow({ task, isNew, onRemove }: {
         className="flex-none w-3 h-3 rounded-full flex items-center justify-center"
         style={{
           border: task.done ? 'none' : '1.5px solid var(--color-border)',
-          background: task.done ? '#8b5cf6' : 'transparent',
+          background: task.done ? 'var(--color-task-accent)' : 'transparent',
           transition: 'all 200ms ease'
         }}
       >

@@ -62,6 +62,13 @@ interface TaskRecord {
   updatedAt: number
 }
 
+interface DailyStats {
+  commitsToday: number
+  linesChangedToday: number
+  activeProjects: number
+  streakDays: number
+}
+
 interface DeployProgress {
   cwd: string
   status: 'deploying' | 'success' | 'error'
@@ -88,6 +95,7 @@ interface ElectronAPI {
   taskRemove: (cwd: string, taskId: string) => Promise<{ success: boolean }>
   taskClear: (cwd: string) => Promise<{ success: boolean }>
   taskSync: (cwd: string) => Promise<{ changed: boolean; tasks?: TaskItem[] }>
+  getDailyStats: (cwds: string[]) => Promise<DailyStats>
 }
 
 declare global {

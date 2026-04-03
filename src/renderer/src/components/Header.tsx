@@ -11,7 +11,12 @@ export function Header({ serviceCount, isLoading, onRefresh }: HeaderProps) {
   return (
     <div
       className="drag-region flex items-center justify-between px-4 py-3"
-      style={{ borderBottom: '1px solid var(--color-border)' }}
+      style={{
+        background: 'rgba(15,15,15,0.75)',
+        backdropFilter: 'blur(50px) saturate(1.4)',
+        WebkitBackdropFilter: 'blur(50px) saturate(1.4)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)'
+      }}
     >
       <div className="flex items-center gap-2">
         <span
