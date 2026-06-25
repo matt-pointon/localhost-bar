@@ -1,0 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@700;800;900&display=swap');
+@import 'tailwindcss';
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* macOS drag region for frameless window */
+.drag-region {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Hide scrollbar by default */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Subtle scrollbar for scrollable content areas */
+.show-scrollbar::-webkit-scrollbar {
+  display: block;
+  width: 4px;
+}
+.show-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.show-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+.show-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes row-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes row-exit {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-5px); }
+}
+
+.row-enter { animation: row-enter 200ms ease both; }
+.row-exit  { animation: row-exit  180ms ease both; }
+
+@keyframes task-enter {
+  from { opacity: 0; transform: translateY(-4px); max-height: 0; }
+  to   { opacity: 1; transform: translateY(0); max-height: 40px; }
+}
+
+.task-enter { animation: task-enter 200ms ease both; }
+
+@keyframes detail-expand {
+  from { max-height: 0; opacity: 0; }
+  to   { max-height: 200px; opacity: 1; }
+}
+
+@theme inline {
+  --font-sans: 'Inter', -apple-system, sans-serif;
+
+  --color-background: transparent;
+  --color-foreground: rgba(220, 230, 220, 0.92);
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-muted: rgba(255, 255, 255, 0.05);
+  --color-muted-foreground: rgba(160, 175, 160, 0.65);
+  --color-accent: rgba(255, 255, 255, 0.07);
+  --color-accent-foreground: rgba(220, 230, 220, 0.92);
+  --color-destructive: oklch(0.62 0.18 25);
+  --color-ring: rgba(255, 255, 255, 0.15);
+
+  --color-status-running: oklch(0.68 0.14 145);
+  --color-status-stopping: oklch(0.70 0.13 55);
+  --color-status-ai: oklch(0.65 0.15 280);
+
+  --color-hover-overlay: rgba(255, 255, 255, 0.05);
+  --color-surface: rgba(6, 9, 7, 0.88);
+  --color-task-accent: oklch(0.72 0.14 285);
+  --color-task-accent-hover: oklch(0.65 0.16 285);
+  --color-warning: oklch(0.78 0.13 72);
+  --color-success: oklch(0.70 0.15 145);
+  --color-destructive-overlay: rgba(200, 30, 30, 0.12);
+  --color-success-overlay: rgba(30, 180, 80, 0.12);
+  --color-input-bg: rgba(255, 255, 255, 0.06);
+
+  --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
