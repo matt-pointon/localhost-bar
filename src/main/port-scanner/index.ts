@@ -63,6 +63,24 @@ function getResourceUsage(pids: number[]): Map<number, ResourceUsage> {
   return result
 }
 
+function shouldExcludeOwnApp(
+  service: { cwd: string | null; command: string; args: string | null },
+  appPath: string
+): boolean {
+  if (!service.cwd) return false
+  const cwd = service.cwd.replace(/\/$/, '')
+  const app = appPath.replace(/\/$/, '')
+  if (cwd !== app && !cwd.startsWith(app + '/')) return false
+
+  const text = `${service.command} ${service.args ?? ''}`.toLowerCase()
+  return (
+    text.includes('electron-vite') ||
+    text.includes('electron/dist/electron') ||
+    text.includes('/out/main/') ||
+    (text.includes('vite') && cwd === app)
+  )
+}
+
 export async function scanPorts(): Promise<ScanResult> {
   const raw = runLsof()
   const appPath = app.getAppPath()
@@ -86,8 +104,9 @@ export async function scanPorts(): Promise<ScanResult> {
       activeAgents: getActiveAgents(cwd),
       pinned: false
     }
-  }).filter(service => !service.cwd?.startsWith(appPath))
+  }).filter(service => !shouldExcludeOwnApp(service, appPath))
 
+  const resources = getResourceUsage(entries.map(e => e.pid))
   for (const entry of entries) {
     entry.resources = resources.get(entry.pid) ?? null
     if (entry.cwd) entry.pinned = isPinned(entry.cwd)
