@@ -70,11 +70,9 @@ interface DeployRecord {
 }
 
 interface DeployInfo {
-  proRequired?: boolean
-  target?: DeployTarget
-  installedCLIs?: { vercel: boolean; railway: boolean; netlify: boolean }
-  lastDeploy?: DeployRecord | null
-  error?: string
+  target: DeployTarget
+  installedCLIs: { vercel: boolean; railway: boolean; netlify: boolean }
+  lastDeploy: DeployRecord | null
 }
 
 interface DayActivity {
@@ -84,21 +82,17 @@ interface DayActivity {
 }
 
 interface DailyStats {
-  proRequired?: boolean
   commitsToday: number
   linesChangedToday: number
   activeProjects: number
   streakDays: number
   history: DayActivity[]
-  error?: string
 }
 
 interface TokenStats {
-  proRequired?: boolean
   claudeDesktop: { tokens: number } | null
   cursor: { aiEdits: number; aiLines: number; avgAiPercent: number } | null
   claudeCode: { prompts: number; sessions: number } | null
-  error?: string
 }
 
 interface DeployProgress {
@@ -108,19 +102,11 @@ interface DeployProgress {
   output?: string
 }
 
-interface LicenseStatus {
-  isPro: boolean
-  email: string | null
-  key: string | null
-}
-
 interface AppSettings {
   notificationsEnabled: boolean
   launchAtLogin: boolean
   pins: string[]
   renames: Record<string, string>
-  licenseKey: string | null
-  licenseEmail: string | null
 }
 
 interface ElectronAPI {
@@ -147,9 +133,6 @@ interface ElectronAPI {
   addTask: (cwd: string, text: string) => Promise<{ success: boolean; tasks?: Task[]; error?: string }>
   toggleTask: (cwd: string, id: string) => Promise<{ success: boolean; tasks?: Task[]; error?: string }>
   removeTask: (cwd: string, id: string) => Promise<{ success: boolean; tasks?: Task[]; error?: string }>
-  getLicenseStatus: () => Promise<LicenseStatus>
-  activateLicense: (key: string) => Promise<{ success: boolean; error?: string; email?: string }>
-  deactivateLicense: () => Promise<{ success: boolean }>
   getSettings: () => Promise<AppSettings>
   setNotificationsEnabled: (enabled: boolean) => Promise<AppSettings>
   togglePin: (cwd: string) => Promise<boolean>

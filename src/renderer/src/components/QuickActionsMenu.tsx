@@ -23,11 +23,9 @@ interface QuickActionsMenuProps {
   cwd: string
   tools: DetectedTool[]
   git: GitStatus | null
-  isPro: boolean
   deployState?: DeployState
   onDeploy: (cwd: string, target: DeployTarget) => void
   onSetLastDeploy: (cwd: string, record: DeployRecord) => void
-  onUpgrade: () => void
 }
 
 const menuItemStyle: React.CSSProperties = {
@@ -102,7 +100,7 @@ function hoverOff(e: React.MouseEvent<HTMLButtonElement>) {
 
 type GitActionState = 'idle' | 'loading' | 'success' | 'error'
 
-export function QuickActionsMenu({ cwd, tools, git, isPro, deployState, onDeploy, onSetLastDeploy, onUpgrade }: QuickActionsMenuProps) {
+export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSetLastDeploy }: QuickActionsMenuProps) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ x: 0, y: 0, maxH: 400 })
   const [deployInfo, setDeployInfo] = useState<DeployInfo | null>(null)
@@ -165,19 +163,14 @@ export function QuickActionsMenu({ cwd, tools, git, isPro, deployState, onDeploy
 
   useEffect(() => {
     if (!open) return
-    if (!isPro) {
-      setDeployInfo(null)
-      return
-    }
     window.electronAPI.deployGetInfo(cwd).then(info => {
-      if ('proRequired' in info && info.proRequired) return
       setDeployInfo(info)
       if (info.lastDeploy) onSetLastDeploy(cwd, info.lastDeploy)
     })
     if (hasGit) {
       window.electronAPI.gitGetInfo(cwd).then(setGitInfo)
     }
-  }, [open, cwd, hasGit, onSetLastDeploy, isPro])
+  }, [open, cwd, hasGit, onSetLastDeploy])
 
   useEffect(() => {
     if (showCommitInput && commitInputRef.current) {
@@ -186,7 +179,6 @@ export function QuickActionsMenu({ cwd, tools, git, isPro, deployState, onDeploy
   }, [showCommitInput])
 
   const handleCommit = async () => {
-    if (!isPro) { onUpgrade(); return }
     if (!commitMsg.trim()) return
     setCommitState('loading')
     setGitError(null)
@@ -202,7 +194,6 @@ export function QuickActionsMenu({ cwd, tools, git, isPro, deployState, onDeploy
   }
 
   const handlePull = async () => {
-    if (!isPro) { onUpgrade(); return }
     setPullState('loading')
     setGitError(null)
     const result = await window.electronAPI.gitPull(cwd)
@@ -216,7 +207,6 @@ export function QuickActionsMenu({ cwd, tools, git, isPro, deployState, onDeploy
   }
 
   const handleCreatePR = async () => {
-    if (!isPro) { onUpgrade(); return }
     setPrState('loading')
     setGitError(null)
     const result = await window.electronAPI.gitCreatePR(cwd)
@@ -238,7 +228,6 @@ export function QuickActionsMenu({ cwd, tools, git, isPro, deployState, onDeploy
   }
 
   const handleDeploy = () => {
-    if (!isPro) { onUpgrade(); setOpen(false); return }
     if (!deployInfo) return
     const { target, installedCLIs } = deployInfo
     const chosen = installedCLIs[target]
@@ -351,18 +340,8 @@ export function QuickActionsMenu({ cwd, tools, git, isPro, deployState, onDeploy
             {/* Separator before deploy */}
             <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 6px' }} />
 
-            {/* Deploy section */}
-            {!isPro ? (
-              <button
-                onClick={() => { onUpgrade(); setOpen(false) }}
-                style={{ ...menuItemStyle, color: 'var(--color-status-ai)' }}
-                onMouseEnter={hoverOn}
-                onMouseLeave={hoverOff}
-              >
-                <span style={{ display: 'flex' }}><Rocket size={12} /></span>
-                Deploy — Pro required
-              </button>
-            ) : !anyCliInstalled ? (
+            {/* Deploy button */}
+            {!anyCliInstalled ? (
               <button
                 onClick={handleNoCliClick}
                 style={{ ...menuItemStyle, color: 'var(--color-muted-foreground)' }}
@@ -442,18 +421,6 @@ export function QuickActionsMenu({ cwd, tools, git, isPro, deployState, onDeploy
               <>
                 <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 6px' }} />
 
-                {!isPro ? (
-                  <button
-                    onClick={() => { onUpgrade(); setOpen(false) }}
-                    style={{ ...menuItemStyle, color: 'var(--color-status-ai)' }}
-                    onMouseEnter={hoverOn}
-                    onMouseLeave={hoverOff}
-                  >
-                    <span style={{ display: 'flex' }}><GitCommitHorizontal size={12} /></span>
-                    Git actions — Pro required
-                  </button>
-                ) : (
-                  <>
                 {/* Commit */}
                 {hasChanges && !showCommitInput && (
                   <button
@@ -575,8 +542,6 @@ export function QuickActionsMenu({ cwd, tools, git, isPro, deployState, onDeploy
                   }}>
                     {gitError}
                   </div>
-                )}
-                  </>
                 )}
               </>
             )}

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { Share, Check, Sparkles } from 'lucide-react'
+import { Share, Check } from 'lucide-react'
 
 function fmt(n: number): string {
   if (n >= 10_000) return `${(n / 1000).toFixed(0)}K`
@@ -12,62 +12,22 @@ interface StatsBarProps {
   tokenStats: TokenStats | null
   serviceCount: number
   isLoading: boolean
-  isPro: boolean
   onRefresh: () => void
-  onUpgrade: () => void
 }
 
-export function StatsBar({ stats, tokenStats, serviceCount, isLoading, isPro, onRefresh, onUpgrade }: StatsBarProps) {
+export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh }: StatsBarProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [shared, setShared] = useState(false)
 
-  const proRequired = stats?.proRequired || tokenStats?.proRequired
-
   const handleShare = useCallback(async () => {
-    if (!isPro) { onUpgrade(); return }
     if (!containerRef.current) return
     const height = containerRef.current.offsetHeight
     const result = await window.electronAPI.shareStats(height)
     if (result.success) {
       setShared(true)
       setTimeout(() => setShared(false), 2000)
-    } else if (result.error?.includes('Pro')) {
-      onUpgrade()
     }
-  }, [isPro, onUpgrade])
-
-  if (!isPro || proRequired) {
-    return (
-      <div
-        ref={containerRef}
-        className="drag-region no-drag"
-        style={{ padding: '12px 14px', position: 'relative', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
-      >
-        <div style={{ textAlign: 'center' }}>
-          <Sparkles size={20} style={{ color: 'var(--color-status-ai)', margin: '0 auto 8px' }} />
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-foreground)', marginBottom: 4 }}>
-            Pro Stats
-          </div>
-          <p style={{ fontSize: 10, color: 'var(--color-muted-foreground)', margin: '0 0 12px', lineHeight: 1.5 }}>
-            Daily commits, AI usage heatmap, and share cards.
-          </p>
-          <button
-            onClick={onUpgrade}
-            style={{
-              padding: '6px 14px', fontSize: 11, fontWeight: 600, borderRadius: 6,
-              border: 'none', cursor: 'pointer',
-              background: 'var(--color-status-running)', color: 'rgba(0,0,0,0.85)'
-            }}
-          >
-            Upgrade to Pro
-          </button>
-          <div style={{ marginTop: 12, fontSize: 10, color: 'var(--color-muted-foreground)' }}>
-            {serviceCount} project{serviceCount !== 1 ? 's' : ''} running
-          </div>
-        </div>
-      </div>
-    )
-  }
+  }, [])
 
   const commitsToday = stats?.commitsToday ?? 0
   const linesChangedToday = stats?.linesChangedToday ?? 0

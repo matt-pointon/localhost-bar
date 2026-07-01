@@ -11,20 +11,18 @@ import type { DeployTarget, DeployRecord, DeployState } from '../hooks/useDeploy
 interface ServiceListProps {
   services: ServiceInfo[]
   search: string
-  isPro: boolean
   onOpen: (port: number) => void
   onKill: (pid: number) => void
   availableTools: DetectedTool[]
   deployStates: Map<string, DeployState>
   onDeploy: (cwd: string, target: DeployTarget) => void
   onSetLastDeploy: (cwd: string, record: DeployRecord) => void
-  onUpgrade: () => void
   onRefresh: () => void
 }
 
 export function ServiceList({
-  services, search, isPro, onOpen, onKill, availableTools,
-  deployStates, onDeploy, onSetLastDeploy, onUpgrade, onRefresh
+  services, search, onOpen, onKill, availableTools,
+  deployStates, onDeploy, onSetLastDeploy, onRefresh
 }: ServiceListProps) {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -43,14 +41,12 @@ export function ServiceList({
         <ServiceRow
           key={`${service.pid}-${service.port}`}
           service={service}
-          isPro={isPro}
           onOpen={onOpen}
           onKill={onKill}
           availableTools={availableTools}
           deployState={service.cwd ? deployStates.get(service.cwd) : undefined}
           onDeploy={onDeploy}
           onSetLastDeploy={onSetLastDeploy}
-          onUpgrade={onUpgrade}
           onRefresh={onRefresh}
         />
       ))}
@@ -59,18 +55,16 @@ export function ServiceList({
 }
 
 function ServiceRow({
-  service, isPro, onOpen, onKill, availableTools, deployState,
-  onDeploy, onSetLastDeploy, onUpgrade, onRefresh
+  service, onOpen, onKill, availableTools, deployState,
+  onDeploy, onSetLastDeploy, onRefresh
 }: {
   service: ServiceInfo
-  isPro: boolean
   onOpen: (port: number) => void
   onKill: (pid: number) => void
   availableTools: DetectedTool[]
   deployState?: DeployState
   onDeploy: (cwd: string, target: DeployTarget) => void
   onSetLastDeploy: (cwd: string, record: DeployRecord) => void
-  onUpgrade: () => void
   onRefresh: () => void
 }) {
   const [hovered, setHovered] = useState(false)
@@ -210,16 +204,14 @@ function ServiceRow({
             </RowBtn>
           )}
           {service.cwd && (
-            <QuickActionsMenu
-              cwd={service.cwd}
-              tools={availableTools}
-              git={service.git}
-              isPro={isPro}
-              deployState={deployState}
-              onDeploy={onDeploy}
-              onSetLastDeploy={onSetLastDeploy}
-              onUpgrade={onUpgrade}
-            />
+          <QuickActionsMenu
+            cwd={service.cwd}
+            tools={availableTools}
+            git={service.git}
+            deployState={deployState}
+            onDeploy={onDeploy}
+            onSetLastDeploy={onSetLastDeploy}
+          />
           )}
           {service.cwd && (
             <RowBtn title="Finder" onClick={() => window.electronAPI.openFolder(service.cwd!)}>
@@ -239,11 +231,9 @@ function ServiceRow({
         <TaskList
           cwd={service.cwd}
           tasks={tasks}
-          isPro={isPro}
           onAdd={add}
           onToggle={toggle}
           onRemove={remove}
-          onUpgrade={onUpgrade}
         />
       )}
     </div>

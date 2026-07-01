@@ -26,11 +26,9 @@ export interface DeployRecord {
 }
 
 export interface DeployInfo {
-  proRequired?: boolean
   target: DeployTarget
   installedCLIs: { vercel: boolean; railway: boolean; netlify: boolean }
   lastDeploy: DeployRecord | null
-  error?: string
 }
 
 export interface DeployProgress {
@@ -97,21 +95,17 @@ export interface DayActivity {
 }
 
 export interface DailyStats {
-  proRequired?: boolean
   commitsToday: number
   linesChangedToday: number
   activeProjects: number
   streakDays: number
   history: DayActivity[]
-  error?: string
 }
 
 export interface TokenStats {
-  proRequired?: boolean
   claudeDesktop: { tokens: number } | null
   cursor: { aiEdits: number; aiLines: number; avgAiPercent: number } | null
   claudeCode: { prompts: number; sessions: number } | null
-  error?: string
 }
 
 export interface GitInfo {
@@ -119,19 +113,11 @@ export interface GitInfo {
   defaultBranch: string | null
 }
 
-export interface LicenseStatus {
-  isPro: boolean
-  email: string | null
-  key: string | null
-}
-
 export interface AppSettings {
   notificationsEnabled: boolean
   launchAtLogin: boolean
   pins: string[]
   renames: Record<string, string>
-  licenseKey: string | null
-  licenseEmail: string | null
 }
 
 export interface ElectronAPI {
@@ -158,9 +144,6 @@ export interface ElectronAPI {
   addTask: (cwd: string, text: string) => Promise<{ success: boolean; tasks?: Task[]; error?: string }>
   toggleTask: (cwd: string, id: string) => Promise<{ success: boolean; tasks?: Task[]; error?: string }>
   removeTask: (cwd: string, id: string) => Promise<{ success: boolean; tasks?: Task[]; error?: string }>
-  getLicenseStatus: () => Promise<LicenseStatus>
-  activateLicense: (key: string) => Promise<{ success: boolean; error?: string; email?: string }>
-  deactivateLicense: () => Promise<{ success: boolean }>
   getSettings: () => Promise<AppSettings>
   setNotificationsEnabled: (enabled: boolean) => Promise<AppSettings>
   togglePin: (cwd: string) => Promise<boolean>
@@ -196,9 +179,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   addTask: (cwd: string, text: string) => ipcRenderer.invoke('tasks:add', { cwd, text }),
   toggleTask: (cwd: string, id: string) => ipcRenderer.invoke('tasks:toggle', { cwd, id }),
   removeTask: (cwd: string, id: string) => ipcRenderer.invoke('tasks:remove', { cwd, id }),
-  getLicenseStatus: () => ipcRenderer.invoke('license:get-status'),
-  activateLicense: (key: string) => ipcRenderer.invoke('license:activate', key),
-  deactivateLicense: () => ipcRenderer.invoke('license:deactivate'),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   setNotificationsEnabled: (enabled: boolean) => ipcRenderer.invoke('settings:set-notifications', enabled),
   togglePin: (cwd: string) => ipcRenderer.invoke('settings:toggle-pin', cwd),

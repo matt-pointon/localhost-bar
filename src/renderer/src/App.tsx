@@ -3,7 +3,6 @@ import { useServices } from './hooks/useServices'
 import { useDeployState } from './hooks/useDeployState'
 import { useStats } from './hooks/useStats'
 import { useTokenStats } from './hooks/useTokenStats'
-import { useLicense } from './hooks/useLicense'
 import { StatsBar } from './components/StatsBar'
 import { ServiceList } from './components/ServiceList'
 import { EmptyState } from './components/EmptyState'
@@ -11,17 +10,14 @@ import { OfflineRow } from './components/OfflineRow'
 import { GradientBackground } from './components/GradientBackground'
 import { PortConflictBanner } from './components/PortConflictBanner'
 import { SearchBar } from './components/SearchBar'
-import { LicenseModal } from './components/LicenseModal'
 import { X, Bell, BellOff } from 'lucide-react'
 import type { DetectedTool } from './components/QuickActionsMenu'
 
 export default function App() {
   const [availableTools, setAvailableTools] = useState<DetectedTool[]>([])
   const [search, setSearch] = useState('')
-  const [showLicense, setShowLicense] = useState(false)
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const { states: deployStates, deploy, setLastDeploy } = useDeployState()
-  const { isPro, activate } = useLicense()
 
   useEffect(() => {
     window.electronAPI.getAvailableTools().then(setAvailableTools)
@@ -44,8 +40,8 @@ export default function App() {
     () => services.map(s => s.cwd).filter((c): c is string => c !== null),
     [services]
   )
-  const stats = useStats(cwds, isPro)
-  const tokenStats = useTokenStats(isPro)
+  const stats = useStats(cwds)
+  const tokenStats = useTokenStats()
 
   const hasRunning = services.length > 0
   const hasOffline = offlineServices.length > 0
@@ -112,9 +108,7 @@ export default function App() {
             tokenStats={tokenStats}
             serviceCount={services.length}
             isLoading={isLoading}
-            isPro={isPro}
             onRefresh={refresh}
-            onUpgrade={() => setShowLicense(true)}
           />
         </div>
 
@@ -133,19 +127,6 @@ export default function App() {
             }}>
               {services.length} Project{services.length !== 1 ? 's' : ''} Running
             </span>
-            {!isPro && (
-              <button
-                className="no-drag"
-                onClick={() => setShowLicense(true)}
-                style={{
-                  fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 4,
-                  border: '1px solid var(--color-status-ai)', background: 'transparent',
-                  color: 'var(--color-status-ai)', cursor: 'pointer'
-                }}
-              >
-                Pro
-              </button>
-            )}
           </div>
 
           <SearchBar value={search} onChange={setSearch} />
@@ -160,14 +141,12 @@ export default function App() {
                   <ServiceList
                     services={services}
                     search={search}
-                    isPro={isPro}
                     onOpen={openService}
                     onKill={killService}
                     availableTools={availableTools}
                     deployStates={deployStates}
                     onDeploy={deploy}
                     onSetLastDeploy={setLastDeploy}
-                    onUpgrade={() => setShowLicense(true)}
                     onRefresh={refresh}
                   />
                 )}
@@ -199,12 +178,6 @@ export default function App() {
           </div>
         </div>
       </div>
-
-      <LicenseModal
-        open={showLicense}
-        onClose={() => setShowLicense(false)}
-        onActivate={activate}
-      />
     </div>
   )
 }

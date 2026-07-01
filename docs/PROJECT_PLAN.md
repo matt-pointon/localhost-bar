@@ -8,9 +8,6 @@ and provides one-click actions to jump back into a project. Targeted at
 developers who run multiple AI-assisted projects simultaneously and lose
 context switching between them.
 
-Freemium model: free port discovery + open actions; Pro unlocks stats, deploy,
-git actions, tasks, and share cards.
-
 ## Tech stack
 
 - Electron + electron-vite (macOS menu bar, tray + frameless floating panel)
@@ -19,7 +16,6 @@ git actions, tasks, and share cards.
 - Port scanning: `lsof` via `child_process`
 - Git status: `git` CLI via `child_process`
 - Deploy: Vercel / Railway / Netlify CLIs via `child_process`
-- Licensing: local key validation (`settings.json`)
 - Auto-update: `electron-updater` (GitHub releases)
 
 ## Current state
@@ -27,7 +23,7 @@ git actions, tasks, and share cards.
 The app has a working prototype with Phases 1–4 largely complete. It
 auto-discovers running dev servers via port scanning (no config file needed),
 shows git status and stack tags on rows, detects AI tool origins and active
-agents, has deploy integration, Pro licensing, and notifications.
+agents, has deploy integration, and notifications.
 
 ## Phases
 
@@ -56,7 +52,6 @@ agents, has deploy integration, Pro licensing, and notifications.
 ### Phase 3 — Power features [MOSTLY COMPLETE]
 
 - [x] Deploy preview integration (Vercel / Railway / Netlify CLI)
-- [x] Pro license gating for deploy, git, stats, tasks, share
 - [ ] `PROJECT_PLAN.md` generation prompt (for users to run on their own projects)
 
 ### Phase 4 — Vibe coder experience [COMPLETE]
@@ -65,26 +60,24 @@ agents, has deploy integration, Pro licensing, and notifications.
 - [x] Quick URL copy — one-click `http://localhost:<port>` from each service row
 - [x] "Who's coding?" — active AI agent detection per project (`agent-detector.ts`)
 - [x] Notifications — service lifecycle alerts with bell toggle
-- [x] Daily stats bar + AI token stats (Pro)
+- [x] Daily stats bar + AI token stats
 - [x] Global tool registry (`tool-registry.ts`) + per-project origin badges (`tool-detector.ts`)
-- [x] GitHub quick actions — commit, pull, create PR (Pro)
+- [x] GitHub quick actions — commit, pull, create PR
 - [x] Search/filter projects
 - [x] Pin and rename projects
 
-## Monetization
+## Distribution
 
-- **Free**: port scanning, project list, open in browser/Finder/editors, offline restart
-- **Pro** (~$59/yr): stats heatmap, AI usage, deploy, git actions, tasks, share cards, notifications
-- License keys: `LB-XXXX-XXXX-XXXX` format with local checksum validation
-- Dev key: `LB-DEV0-0000-PRO0`
-- Distribution: code signing entitlements in `build/entitlements.mac.plist`, `electron-updater` via GitHub releases
+- Code signing entitlements in `build/entitlements.mac.plist`
+- Auto-update via `electron-updater` and GitHub releases
+- Free — all features included for now
 
 ## Architecture notes
 
 - **Tray + panel**: `Tray` toggles a 560×290 frameless `BrowserWindow`, auto-hides on blur
 - **Scan result**: `{ services, portConflicts }` from `scanPorts()`
 - **Service fields**: git, stackTags, originTools, activeAgents, pinned, resources
-- **Settings**: `settings.json` in userData — pins, renames, notifications, license
+- **Settings**: `settings.json` in userData — pins, renames, notifications
 - **Tasks**: `tasks.json` in userData, synced to AI config files via `tasks/config-writer.ts`
 - **Notifications**: `scan-tracker.ts` diffs consecutive scans, fires Electron `Notification`
 - 3-second polling interval for port scanning (renderer-side via `useServices` hook)
@@ -100,7 +93,6 @@ agents, has deploy integration, Pro licensing, and notifications.
 - Branded share card templates
 - `PROJECT_PLAN.md` generation prompt
 - Setapp distribution
-- Team tier with cloud sync
 
 ## Out of scope
 

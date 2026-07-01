@@ -16,7 +16,6 @@ A macOS menu bar app for designers and vibe coders that shows all running localh
 - Daily stats + AI usage heatmap (Pro), share to clipboard (Pro)
 - Search/filter, pin, and rename projects
 - Notifications for service online/offline/conflict events (toggle in header)
-- Freemium licensing with local key activation
 
 ## Stack
 
@@ -35,7 +34,7 @@ src/
     panel.ts                        # Floating panel window (560×290)
     ipc-handlers.ts                 # IPC handlers + Pro gating
     tool-registry.ts                # Global installed-tool detection
-    settings.ts                     # Pins, renames, license, notifications
+    settings.ts                     # Pins, renames, notifications
     notifications.ts                # Electron Notification wrapper
     scan-tracker.ts                 # Service lifecycle diff → notifications
     updater.ts                      # electron-updater
@@ -64,13 +63,12 @@ src/
       useStats.ts / useTokenStats.ts
     components/
       ServiceList.tsx               # Service rows (git, tags, copy URL, tasks)
-      QuickActionsMenu.tsx          # Deploy, git, open-in menu (Pro gated)
-      StatsBar.tsx                  # Heatmap + share (Pro gated)
+      QuickActionsMenu.tsx          # Deploy, git, open-in menu
+      StatsBar.tsx                  # Heatmap + share
       ToolIcons.tsx                 # Origin + active agent badges
       TaskList.tsx                  # Accordion checklist
       PortConflictBanner.tsx
       SearchBar.tsx
-      LicenseModal.tsx
       OfflineRow.tsx / EmptyState.tsx
 ```
 
@@ -78,13 +76,12 @@ src/
 
 - **Allowlist not blocklist** for port filtering — only show known dev runtimes
 - **Dual tool detection** — global registry for "Open in" menu + per-project origin markers for badges + process-based active agent detection
-- **Freemium Pro gate** — stats, deploy, git, tasks, share require valid license key
 - **Synchronous ref mirror** (`servicesRef`) in useServices — avoids React async state timing issues
 - **Portal dropdowns** — QuickActionsMenu renders into `document.body`
 
 ## Project status
 
-Phases 1–4 complete. Pro licensing and auto-update infrastructure in place.
+Phases 1–4 complete. Auto-update infrastructure in place.
 
 Remaining nice-to-have: health checks, launch-at-login UI, monorepo grouping, branded share templates.
 
@@ -95,5 +92,3 @@ npm run dev     # dev mode with hot reload
 npm run build   # production build
 npm run dist    # build + package as .dmg
 ```
-
-Dev Pro license key: `LB-DEV0-0000-PRO0`

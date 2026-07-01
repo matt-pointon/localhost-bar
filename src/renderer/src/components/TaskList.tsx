@@ -5,14 +5,12 @@ import type { Task } from '../../../preload/index'
 interface TaskListProps {
   cwd: string
   tasks: Task[]
-  isPro: boolean
   onAdd: (text: string) => Promise<{ success: boolean; error?: string }>
   onToggle: (id: string) => void
   onRemove: (id: string) => void
-  onUpgrade: () => void
 }
 
-export function TaskList({ cwd, tasks, isPro, onAdd, onToggle, onRemove, onUpgrade }: TaskListProps) {
+export function TaskList({ cwd, tasks, onAdd, onToggle, onRemove }: TaskListProps) {
   const [expanded, setExpanded] = useState(false)
   const [input, setInput] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -24,10 +22,8 @@ export function TaskList({ cwd, tasks, isPro, onAdd, onToggle, onRemove, onUpgra
 
   const handleAdd = async () => {
     if (!input.trim()) return
-    if (!isPro) { onUpgrade(); return }
     const result = await onAdd(input.trim())
     if (result.success) setInput('')
-    else if (result.error?.includes('Pro')) onUpgrade()
   }
 
   return (
@@ -68,21 +64,19 @@ export function TaskList({ cwd, tasks, isPro, onAdd, onToggle, onRemove, onUpgra
               <input
                 type="checkbox"
                 checked={task.done}
-                onChange={() => isPro ? onToggle(task.id) : onUpgrade()}
+                onChange={() => onToggle(task.id)}
                 onClick={e => e.stopPropagation()}
                 style={{ width: 11, height: 11, cursor: 'pointer', flexShrink: 0 }}
               />
               <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {task.text}
               </span>
-              {isPro && (
-                <button
-                  onClick={e => { e.stopPropagation(); onRemove(task.id) }}
-                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-muted-foreground)', padding: 0, display: 'flex' }}
-                >
-                  <X size={10} />
-                </button>
-              )}
+              <button
+                onClick={e => { e.stopPropagation(); onRemove(task.id) }}
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-muted-foreground)', padding: 0, display: 'flex' }}
+              >
+                <X size={10} />
+              </button>
             </div>
           ))}
           <div style={{ display: 'flex', gap: 4, marginTop: 4 }} onClick={e => e.stopPropagation()}>
@@ -92,7 +86,7 @@ export function TaskList({ cwd, tasks, isPro, onAdd, onToggle, onRemove, onUpgra
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleAdd() }}
-              placeholder={isPro ? 'Add task…' : 'Pro required'}
+              placeholder="Add task…"
               style={{
                 flex: 1,
                 fontSize: 10,
