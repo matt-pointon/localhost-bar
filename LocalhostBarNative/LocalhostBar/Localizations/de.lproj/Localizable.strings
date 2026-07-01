@@ -1,0 +1,64 @@
+/* General */
+"app.name" = "Localhost Bar";
+"app.quit" = "Beenden";
+"app.settings" = "Einstellungen";
+
+/* Main View */
+"servers.running" = "%d Projekt%@ aktiv";
+"servers.running.singular" = "";
+"servers.running.plural" = "e";
+"servers.empty.title" = "Keine Server aktiv";
+"servers.empty.subtitle" = "Starten Sie einen Dev-Server, um ihn hier zu sehen";
+"servers.offline" = "Offline";
+
+/* Actions */
+"action.open.browser" = "Im Browser öffnen";
+"action.open.finder" = "Im Finder öffnen";
+"action.stop" = "Stoppen";
+"action.restart" = "Neu starten";
+"action.dismiss" = "Entfernen";
+"action.openWith" = "Öffnen mit...";
+
+/* Stats */
+"stats.lines" = "Zeilen";
+"stats.line" = "Zeile";
+"stats.commits" = "Commits";
+"stats.commit" = "Commit";
+"stats.streak" = "Serie";
+"stats.today" = "Heute";
+"stats.noActivity" = "Keine Aktivität";
+"stats.share" = "Statistiken teilen";
+"stats.copied" = "Kopiert!";
+
+/* Settings */
+"settings.general" = "Allgemein";
+"settings.launchAtLogin" = "Bei Anmeldung starten";
+"settings.performance" = "Leistung";
+"settings.scanInterval" = "Scan-Intervall";
+"settings.about" = "Über";
+"settings.version" = "Version";
+"settings.github" = "GitHub-Repository";
+"settings.reportIssue" = "Problem melden";
+
+/* Scan Intervals */
+"interval.1s" = "1 Sekunde";
+"interval.3s" = "3 Sekunden";
+"interval.5s" = "5 Sekunden";
+"interval.10s" = "10 Sekunden";
+
+/* Widget */
+"widget.title" = "Aktive Server";
+"widget.description" = "Zeigt an, wie viele Entwicklungsserver auf localhost laufen.";
+"widget.server" = "Server";
+"widget.servers" = "Server";
+"widget.noServers" = "Keine Server aktiv";
+
+/* Shortcuts */
+"shortcut.showServers.title" = "Aktive Server anzeigen";
+"shortcut.showServers.description" = "Öffnet das Localhost Bar Menü und zeigt alle laufenden Entwicklungsserver an.";
+"shortcut.getCount.title" = "Serveranzahl abrufen";
+"shortcut.getCount.description" = "Gibt die Anzahl der aktuell laufenden Entwicklungsserver zurück.";
+"shortcut.killServer.title" = "Server stoppen";
+"shortcut.killServer.description" = "Stoppt einen auf dem angegebenen Port laufenden Entwicklungsserver.";
+"shortcut.openServer.title" = "Server im Browser öffnen";
+"shortcut.openServer.description" = "Öffnet einen laufenden Server in Ihrem Standard-Webbrowser.";
