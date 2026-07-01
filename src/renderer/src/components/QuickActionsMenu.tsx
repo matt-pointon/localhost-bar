@@ -33,14 +33,14 @@ const menuItemStyle: React.CSSProperties = {
   alignItems: 'center',
   gap: 8,
   width: '100%',
-  padding: '5px 10px',
+  padding: '6px 10px',
   fontSize: 12,
   fontWeight: 500,
   textAlign: 'left',
   background: 'transparent',
   border: 'none',
   cursor: 'pointer',
-  borderRadius: 5,
+  borderRadius: 6,
   color: 'var(--color-foreground)',
   whiteSpace: 'nowrap'
 }
@@ -338,7 +338,7 @@ export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSet
             )}
 
             {/* Separator before deploy */}
-            <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 6px' }} />
+            <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 8px' }} />
 
             {/* Deploy button */}
             {!anyCliInstalled ? (
@@ -419,7 +419,7 @@ export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSet
             {/* Git actions */}
             {hasGit && (
               <>
-                <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 6px' }} />
+                <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 8px' }} />
 
                 {/* Commit */}
                 {hasChanges && !showCommitInput && (
@@ -533,7 +533,7 @@ export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSet
                 {/* Git error message */}
                 {gitError && (
                   <div style={{
-                    padding: '3px 10px',
+                    padding: '4px 10px',
                     fontSize: 10,
                     color: 'var(--color-destructive)',
                     overflow: 'hidden',

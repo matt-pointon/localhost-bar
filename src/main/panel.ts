@@ -7,7 +7,7 @@ let panelWindow: BrowserWindow | null = null
 export function createPanel(): BrowserWindow {
   panelWindow = new BrowserWindow({
     width: 560,
-    height: 290,
+    height: 288,
     show: false,
     frame: false,
     resizable: false,

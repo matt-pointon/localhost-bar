@@ -61,11 +61,11 @@ export default function App() {
         title="Quit"
         style={{
           position: 'absolute',
-          top: 10,
-          right: 10,
+          top: 8,
+          right: 8,
           zIndex: 20,
           padding: 4,
-          borderRadius: 5,
+          borderRadius: 6,
           border: 'none',
           background: 'transparent',
           cursor: 'pointer',
@@ -128,7 +128,7 @@ export default function App() {
         >
           {/* Title */}
           <div className="drag-region" style={{
-            padding: '10px 14px 4px',
+            padding: '12px 16px 4px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between'
@@ -164,14 +164,14 @@ export default function App() {
                 {hasOffline && (
                   <>
                     <div style={{
-                      padding: '12px 14px 6px',
+                      padding: '12px 16px 4px',
                       borderTop: hasRunning ? '1px solid rgba(255,255,255,0.04)' : 'none'
                     }}>
                       <span style={{ fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-muted-foreground)' }}>
                         Offline
                       </span>
                     </div>
-                    <div style={{ padding: '0 8px 8px' }}>
+                    <div style={{ padding: '0 0 8px' }}>
                       {offlineServices.map(service => (
                         <OfflineRow
                           key={service.port}

@@ -17,7 +17,7 @@ interface ServiceListProps {
 
 export function ServiceList({ services, onOpen, onKill, availableTools, deployStates, onDeploy, onSetLastDeploy }: ServiceListProps) {
   return (
-    <div style={{ padding: '6px 0' }}>
+    <div style={{ padding: '4px 0' }}>
       {services.map(service => (
         <ServiceRow
           key={`${service.pid}-${service.port}`}
@@ -53,7 +53,7 @@ function ServiceRow({ service, onOpen, onKill, availableTools, deployState, onDe
       onMouseLeave={() => setHovered(false)}
       onClick={() => !isStopping && onOpen(service.port)}
       style={{
-        padding: '7px 12px',
+        padding: '8px 12px',
         display: 'flex',
         alignItems: 'center',
         gap: 8,
@@ -156,7 +156,7 @@ function RowBtn({ title, onClick, disabled, hoverColor, children }: {
       disabled={disabled}
       onClick={e => { e.stopPropagation(); onClick() }}
       style={{
-        padding: 4, borderRadius: 5, border: 'none', background: 'transparent',
+        padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
         cursor: disabled ? 'not-allowed' : 'pointer',
         color: 'var(--color-muted-foreground)',
         display: 'flex', alignItems: 'center', transition: 'all 100ms'

@@ -52,14 +52,14 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
       ref={containerRef}
       className="drag-region"
       style={{
-        padding: '12px 14px 12px',
+        padding: '12px 16px',
         position: 'relative'
       }}
     >
       {/* Action buttons — top right */}
       <div
         className="no-drag"
-        style={{ position: 'absolute', top: 12, right: 14, display: 'flex', gap: 2 }}
+        style={{ position: 'absolute', top: 12, right: 16, display: 'flex', gap: 2 }}
       >
         <HeaderBtn title={shared ? 'Copied!' : 'Share stats'} onClick={handleShare}>
           {shared ? <Check size={12} style={{ color: 'var(--color-success)' }} /> : <Share size={12} />}
@@ -67,7 +67,7 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
       </div>
 
       {/* Top stat numbers */}
-      <div style={{ display: 'flex', gap: 20, marginBottom: 14 }}>
+      <div style={{ display: 'flex', gap: 20, marginBottom: 16 }}>
         {linesChangedToday > 0 && (
           <StatNumber value={fmt(linesChangedToday)} label={linesChangedToday === 1 ? 'Line' : 'Lines'} />
         )}
@@ -116,7 +116,7 @@ function HeaderBtn({ title, onClick, children }: { title: string; onClick: () =>
       title={title}
       className="no-drag"
       style={{
-        padding: 4, borderRadius: 5, border: 'none', background: 'transparent',
+        padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
         cursor: 'pointer', color: 'var(--color-muted-foreground)', display: 'flex', alignItems: 'center'
       }}
       onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-hover-overlay)'; e.currentTarget.style.color = 'var(--color-foreground)' }}
@@ -183,7 +183,7 @@ function ActivityGrid({ history }: { history: DayActivity[] }) {
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${COLS}, 1fr)`,
-          gap: 3
+          gap: 4
         }}
       >
         {days.map((day, i) => {
@@ -197,7 +197,7 @@ function ActivityGrid({ history }: { history: DayActivity[] }) {
               onMouseLeave={() => setHoveredDay(null)}
               style={{
                 aspectRatio: '1',
-                borderRadius: 3,
+                borderRadius: 4,
                 background: colors[day.level],
                 border: showBorder
                   ? '1px solid rgba(255, 255, 255, 0.25)'
