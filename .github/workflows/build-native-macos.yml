@@ -1,0 +1,144 @@
+name: Build Native macOS App
+
+on:
+  push:
+    branches:
+      - main
+      - 'cursor/*'
+    paths:
+      - 'LocalhostBarNative/**'
+      - '.github/workflows/build-native-macos.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'LocalhostBarNative/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build macOS App
+    runs-on: macos-14
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        working-directory: LocalhostBarNative
+        run: xcodegen generate
+
+      - name: Build App
+        working-directory: LocalhostBarNative
+        run: |
+          xcodebuild -project LocalhostBar.xcodeproj \
+            -scheme LocalhostBar \
+            -configuration Release \
+            -derivedDataPath build \
+            -destination 'platform=macOS' \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Create App Bundle
+        working-directory: LocalhostBarNative
+        run: |
+          APP_PATH="build/Build/Products/Release/LocalhostBar.app"
+          
+          # Verify the app was built
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Error: App not found at $APP_PATH"
+            ls -la build/Build/Products/Release/ || true
+            exit 1
+          fi
+          
+          echo "App built successfully at $APP_PATH"
+          ls -la "$APP_PATH"
+
+      - name: Create DMG
+        working-directory: LocalhostBarNative
+        run: |
+          APP_PATH="build/Build/Products/Release/LocalhostBar.app"
+          DMG_NAME="LocalhostBar-${{ github.sha }}.dmg"
+          
+          # Create a temporary directory for DMG contents
+          mkdir -p dmg_contents
+          cp -R "$APP_PATH" dmg_contents/
+          
+          # Create a symlink to Applications
+          ln -s /Applications dmg_contents/Applications
+          
+          # Create the DMG
+          hdiutil create -volname "Localhost Bar" \
+            -srcfolder dmg_contents \
+            -ov -format UDZO \
+            "$DMG_NAME"
+          
+          echo "DMG created: $DMG_NAME"
+          ls -la "$DMG_NAME"
+
+      - name: Upload DMG Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LocalhostBar-macOS
+          path: LocalhostBarNative/LocalhostBar-*.dmg
+          retention-days: 30
+
+      - name: Upload App Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: LocalhostBar-App
+          path: LocalhostBarNative/build/Build/Products/Release/LocalhostBar.app
+          retention-days: 30
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Download DMG
+        uses: actions/download-artifact@v4
+        with:
+          name: LocalhostBar-macOS
+          path: ./
+
+      - name: Get version
+        id: version
+        run: echo "version=1.0.0-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: native-v${{ steps.version.outputs.version }}
+          name: Native macOS App v${{ steps.version.outputs.version }}
+          body: |
+            ## Native macOS App Build
+            
+            This is an automated build of the native Swift/SwiftUI version of Localhost Bar.
+            
+            ### Installation
+            1. Download `LocalhostBar-*.dmg`
+            2. Open the DMG
+            3. Drag Localhost Bar to Applications
+            4. Open from Applications (right-click → Open on first launch)
+            
+            ### Requirements
+            - macOS 14.0 (Sonoma) or later
+            
+            ### Note
+            This is an unsigned build for testing. You may need to allow it in System Settings → Privacy & Security.
+          files: LocalhostBar-*.dmg
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

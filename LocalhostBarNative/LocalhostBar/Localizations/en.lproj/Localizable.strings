@@ -1,0 +1,64 @@
+/* General */
+"app.name" = "Localhost Bar";
+"app.quit" = "Quit";
+"app.settings" = "Settings";
+
+/* Main View */
+"servers.running" = "%d Project%@ Running";
+"servers.running.singular" = "";
+"servers.running.plural" = "s";
+"servers.empty.title" = "No servers running";
+"servers.empty.subtitle" = "Start a dev server to see it here";
+"servers.offline" = "Offline";
+
+/* Actions */
+"action.open.browser" = "Open in Browser";
+"action.open.finder" = "Open in Finder";
+"action.stop" = "Stop";
+"action.restart" = "Restart";
+"action.dismiss" = "Dismiss";
+"action.openWith" = "Open with...";
+
+/* Stats */
+"stats.lines" = "Lines";
+"stats.line" = "Line";
+"stats.commits" = "Commits";
+"stats.commit" = "Commit";
+"stats.streak" = "Streak";
+"stats.today" = "Today";
+"stats.noActivity" = "No activity";
+"stats.share" = "Share stats";
+"stats.copied" = "Copied!";
+
+/* Settings */
+"settings.general" = "General";
+"settings.launchAtLogin" = "Launch at Login";
+"settings.performance" = "Performance";
+"settings.scanInterval" = "Scan Interval";
+"settings.about" = "About";
+"settings.version" = "Version";
+"settings.github" = "GitHub Repository";
+"settings.reportIssue" = "Report an Issue";
+
+/* Scan Intervals */
+"interval.1s" = "1 second";
+"interval.3s" = "3 seconds";
+"interval.5s" = "5 seconds";
+"interval.10s" = "10 seconds";
+
+/* Widget */
+"widget.title" = "Running Servers";
+"widget.description" = "Shows how many development servers are currently running on localhost.";
+"widget.server" = "Server";
+"widget.servers" = "Servers";
+"widget.noServers" = "No servers running";
+
+/* Shortcuts */
+"shortcut.showServers.title" = "Show Running Servers";
+"shortcut.showServers.description" = "Opens the Localhost Bar menu to show all running development servers.";
+"shortcut.getCount.title" = "Get Server Count";
+"shortcut.getCount.description" = "Returns the number of currently running development servers.";
+"shortcut.killServer.title" = "Stop Server";
+"shortcut.killServer.description" = "Stops a development server running on the specified port.";
+"shortcut.openServer.title" = "Open Server in Browser";
+"shortcut.openServer.description" = "Opens a running server in your default web browser.";

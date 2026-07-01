@@ -1,0 +1,75 @@
+name: LocalhostBar
+options:
+  bundleIdPrefix: com.localhostbar
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "15.0"
+  generateEmptyDirectories: true
+  groupSortPosition: top
+  minimumXcodeGenVersion: "2.38.0"
+  projectFileVersion: "56"
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: "-"
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+targets:
+  LocalhostBar:
+    type: application
+    platform: macOS
+    sources:
+      - path: LocalhostBar
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.localhostbar.app
+        INFOPLIST_FILE: LocalhostBar/Info.plist
+        CODE_SIGN_ENTITLEMENTS: LocalhostBar/LocalhostBar.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        COMBINE_HIDPI_IMAGES: YES
+        ENABLE_HARDENED_RUNTIME: YES
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/../Frameworks"
+    info:
+      path: LocalhostBar/Info.plist
+      properties:
+        CFBundleDisplayName: Localhost Bar
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        LSUIElement: true
+        LSApplicationCategoryType: public.app-category.developer-tools
+        LSMinimumSystemVersion: "$(MACOSX_DEPLOYMENT_TARGET)"
+        NSHumanReadableCopyright: "Copyright © 2026. All rights reserved."
+        NSPrincipalClass: NSApplication
+
+schemes:
+  LocalhostBar:
+    build:
+      targets:
+        LocalhostBar: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+
+# Note: Widget extension commented out for initial build
+# To add the widget, uncomment and configure signing:
+#
+# LocalhostBarWidget:
+#   type: app-extension
+#   platform: macOS
+#   sources:
+#     - path: LocalhostBarWidget
+#   settings:
+#     base:
+#       PRODUCT_BUNDLE_IDENTIFIER: com.localhostbar.app.widget
+#       INFOPLIST_FILE: LocalhostBarWidget/Info.plist
+#       CODE_SIGN_ENTITLEMENTS: LocalhostBarWidget/LocalhostBarWidget.entitlements

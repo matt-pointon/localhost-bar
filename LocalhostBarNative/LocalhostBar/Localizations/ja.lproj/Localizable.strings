@@ -1,0 +1,64 @@
+/* General */
+"app.name" = "Localhost Bar";
+"app.quit" = "終了";
+"app.settings" = "設定";
+
+/* Main View */
+"servers.running" = "%d プロジェクト実行中";
+"servers.running.singular" = "";
+"servers.running.plural" = "";
+"servers.empty.title" = "サーバーが実行されていません";
+"servers.empty.subtitle" = "開発サーバーを起動すると表示されます";
+"servers.offline" = "オフライン";
+
+/* Actions */
+"action.open.browser" = "ブラウザで開く";
+"action.open.finder" = "Finderで開く";
+"action.stop" = "停止";
+"action.restart" = "再起動";
+"action.dismiss" = "削除";
+"action.openWith" = "アプリで開く...";
+
+/* Stats */
+"stats.lines" = "行";
+"stats.line" = "行";
+"stats.commits" = "コミット";
+"stats.commit" = "コミット";
+"stats.streak" = "連続";
+"stats.today" = "今日";
+"stats.noActivity" = "アクティビティなし";
+"stats.share" = "統計を共有";
+"stats.copied" = "コピーしました！";
+
+/* Settings */
+"settings.general" = "一般";
+"settings.launchAtLogin" = "ログイン時に起動";
+"settings.performance" = "パフォーマンス";
+"settings.scanInterval" = "スキャン間隔";
+"settings.about" = "情報";
+"settings.version" = "バージョン";
+"settings.github" = "GitHubリポジトリ";
+"settings.reportIssue" = "問題を報告";
+
+/* Scan Intervals */
+"interval.1s" = "1秒";
+"interval.3s" = "3秒";
+"interval.5s" = "5秒";
+"interval.10s" = "10秒";
+
+/* Widget */
+"widget.title" = "実行中のサーバー";
+"widget.description" = "localhostで実行中の開発サーバーの数を表示します。";
+"widget.server" = "サーバー";
+"widget.servers" = "サーバー";
+"widget.noServers" = "サーバーが実行されていません";
+
+/* Shortcuts */
+"shortcut.showServers.title" = "実行中のサーバーを表示";
+"shortcut.showServers.description" = "Localhost Barメニューを開いて、実行中のすべての開発サーバーを表示します。";
+"shortcut.getCount.title" = "サーバー数を取得";
+"shortcut.getCount.description" = "現在実行中の開発サーバーの数を返します。";
+"shortcut.killServer.title" = "サーバーを停止";
+"shortcut.killServer.description" = "指定されたポートで実行中の開発サーバーを停止します。";
+"shortcut.openServer.title" = "ブラウザでサーバーを開く";
+"shortcut.openServer.description" = "実行中のサーバーをデフォルトのWebブラウザで開きます。";

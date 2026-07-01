@@ -1,0 +1,64 @@
+/* General */
+"app.name" = "Localhost Bar";
+"app.quit" = "Quitter";
+"app.settings" = "Paramètres";
+
+/* Main View */
+"servers.running" = "%d Projet%@ en cours";
+"servers.running.singular" = "";
+"servers.running.plural" = "s";
+"servers.empty.title" = "Aucun serveur en cours";
+"servers.empty.subtitle" = "Démarrez un serveur de développement pour le voir ici";
+"servers.offline" = "Hors ligne";
+
+/* Actions */
+"action.open.browser" = "Ouvrir dans le navigateur";
+"action.open.finder" = "Ouvrir dans le Finder";
+"action.stop" = "Arrêter";
+"action.restart" = "Redémarrer";
+"action.dismiss" = "Supprimer";
+"action.openWith" = "Ouvrir avec...";
+
+/* Stats */
+"stats.lines" = "Lignes";
+"stats.line" = "Ligne";
+"stats.commits" = "Commits";
+"stats.commit" = "Commit";
+"stats.streak" = "Série";
+"stats.today" = "Aujourd'hui";
+"stats.noActivity" = "Aucune activité";
+"stats.share" = "Partager les statistiques";
+"stats.copied" = "Copié !";
+
+/* Settings */
+"settings.general" = "Général";
+"settings.launchAtLogin" = "Lancer au démarrage";
+"settings.performance" = "Performance";
+"settings.scanInterval" = "Intervalle d'analyse";
+"settings.about" = "À propos";
+"settings.version" = "Version";
+"settings.github" = "Dépôt GitHub";
+"settings.reportIssue" = "Signaler un problème";
+
+/* Scan Intervals */
+"interval.1s" = "1 seconde";
+"interval.3s" = "3 secondes";
+"interval.5s" = "5 secondes";
+"interval.10s" = "10 secondes";
+
+/* Widget */
+"widget.title" = "Serveurs actifs";
+"widget.description" = "Affiche le nombre de serveurs de développement en cours d'exécution sur localhost.";
+"widget.server" = "Serveur";
+"widget.servers" = "Serveurs";
+"widget.noServers" = "Aucun serveur en cours";
+
+/* Shortcuts */
+"shortcut.showServers.title" = "Afficher les serveurs actifs";
+"shortcut.showServers.description" = "Ouvre le menu Localhost Bar pour afficher tous les serveurs de développement en cours.";
+"shortcut.getCount.title" = "Obtenir le nombre de serveurs";
+"shortcut.getCount.description" = "Retourne le nombre de serveurs de développement actuellement en cours.";
+"shortcut.killServer.title" = "Arrêter le serveur";
+"shortcut.killServer.description" = "Arrête un serveur de développement sur le port spécifié.";
+"shortcut.openServer.title" = "Ouvrir le serveur dans le navigateur";
+"shortcut.openServer.description" = "Ouvre un serveur en cours dans votre navigateur web par défaut.";
