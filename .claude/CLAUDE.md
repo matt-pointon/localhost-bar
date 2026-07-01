@@ -58,7 +58,6 @@ src/
     App.tsx                         # Panel layout: stats + project list
     hooks/
       useServices.ts                # 3s polling, offline tracking
-      useLicense.ts                 # Pro status
       useTasks.ts                   # Per-project tasks
       useStats.ts / useTokenStats.ts
     components/
