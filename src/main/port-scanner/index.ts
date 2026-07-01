@@ -3,13 +3,18 @@ import { execSync } from 'child_process'
 import { runLsof } from './lsof-parser'
 import { inferProcessInfo } from './name-inferrer'
 import { getGitStatus } from './git-status'
+import { detectStackTags } from './stack-tags'
+import { detectOriginTools } from './tool-detector'
+import { getActiveAgents } from './agent-detector'
+import { detectPortConflicts } from './port-conflicts'
+import { getDisplayName, sortByPins, isPinned } from '../settings'
 import type { GitStatus } from './git-status'
 
 export type { GitStatus }
 
 export interface ResourceUsage {
-  cpu: number   // percentage (0–100+)
-  mem: number   // RSS in MB
+  cpu: number
+  mem: number
 }
 
 export interface ServiceInfo {
@@ -23,6 +28,15 @@ export interface ServiceInfo {
   args: string | null
   git: GitStatus | null
   resources: ResourceUsage | null
+  stackTags: string[]
+  originTools: string[]
+  activeAgents: string[]
+  pinned: boolean
+}
+
+export interface ScanResult {
+  services: ServiceInfo[]
+  portConflicts: ReturnType<typeof detectPortConflicts>
 }
 
 function getResourceUsage(pids: number[]): Map<number, ResourceUsage> {
@@ -45,36 +59,42 @@ function getResourceUsage(pids: number[]): Map<number, ResourceUsage> {
         }
       }
     }
-  } catch {
-    // silently fail
-  }
+  } catch { /* skip */ }
   return result
 }
 
-export async function scanPorts(): Promise<ServiceInfo[]> {
+export async function scanPorts(): Promise<ScanResult> {
   const raw = runLsof()
   const appPath = app.getAppPath()
 
   const entries = raw.map(entry => {
     const info = inferProcessInfo(entry.pid, entry.command)
+    const cwd = info.cwd
     return {
       pid: entry.pid,
       port: entry.port,
-      name: info.name,
+      name: getDisplayName(cwd, info.name),
       command: info.command,
       address: entry.address,
       status: 'running' as const,
-      cwd: info.cwd,
+      cwd,
       args: info.args,
-      git: getGitStatus(info.cwd),
-      resources: null as ResourceUsage | null
+      git: getGitStatus(cwd),
+      resources: null as ResourceUsage | null,
+      stackTags: detectStackTags(cwd),
+      originTools: detectOriginTools(cwd),
+      activeAgents: getActiveAgents(cwd),
+      pinned: false
     }
   }).filter(service => !service.cwd?.startsWith(appPath))
 
-  const resources = getResourceUsage(entries.map(e => e.pid))
   for (const entry of entries) {
     entry.resources = resources.get(entry.pid) ?? null
+    if (entry.cwd) entry.pinned = isPinned(entry.cwd)
   }
 
-  return entries
+  const sorted = sortByPins(entries)
+  const portConflicts = detectPortConflicts(sorted)
+
+  return { services: sorted, portConflicts }
 }

@@ -64,6 +64,11 @@ body {
 
 .task-enter { animation: task-enter 200ms ease both; }
 
+.detail-expand {
+  animation: detail-expand 200ms ease both;
+  overflow: hidden;
+}
+
 @keyframes detail-expand {
   from { max-height: 0; opacity: 0; }
   to   { max-height: 200px; opacity: 1; }

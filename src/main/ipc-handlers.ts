@@ -1,15 +1,25 @@
-import { app, ipcMain, shell, clipboard, nativeImage, BrowserWindow } from 'electron'
+import { app, ipcMain, shell, clipboard, BrowserWindow } from 'electron'
 import { execSync, spawn } from 'child_process'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { scanPorts } from './port-scanner'
-import { getAvailableTools, type DetectedTool } from './tool-registry'
+import { trackServiceChanges } from './scan-tracker'
+import { getAvailableTools } from './tool-registry'
 import { runDeploy, getInstalledDeployCLIs, detectDeployTarget, getLastDeploy } from './deploy'
 import type { DeployTarget } from './deploy'
 import { getGitStatus } from './port-scanner/git-status'
 import { gitCommit, gitPull, gitCreatePR, isGhInstalled, getDefaultBranch } from './git-actions'
 import { getDailyStats } from './stats/collector'
 import { getTokenStats } from './token-stats'
+import { isPro, getLicenseStatus, activateLicense, deactivateLicense, getSettings, setSettings, togglePin, setRename } from './settings'
+import { setNotificationsEnabled } from './notifications'
+import { getTasks, addTask, toggleTask, removeTask } from './tasks/store'
+import { checkForUpdates } from './updater'
+
+function requirePro(): { ok: true } | { ok: false; error: string } {
+  if (isPro()) return { ok: true }
+  return { ok: false, error: 'Pro license required' }
+}
 
 // ── Tool usage tracking (MRU order) ─────────────────────────────────────────
 function getUsagePath(): string {
@@ -34,7 +44,9 @@ function recordToolUsage(toolId: string): void {
 
 export function registerIpcHandlers(): void {
   ipcMain.handle('ports:scan', async () => {
-    return await scanPorts()
+    const result = await scanPorts()
+    trackServiceChanges(result.services, result.portConflicts)
+    return result
   })
 
   ipcMain.handle('ports:kill', async (_event, pid: number) => {
@@ -142,7 +154,10 @@ export function registerIpcHandlers(): void {
   }
 
   ipcMain.handle('deploy:get-info', (_event, cwd: string) => {
+    const gate = requirePro()
+    if (!gate.ok) return { proRequired: true as const, ...gate }
     return {
+      proRequired: false as const,
       target: detectDeployTarget(cwd),
       installedCLIs: getInstalledDeployCLIs(),
       lastDeploy: getLastDeploy(cwd)
@@ -150,6 +165,11 @@ export function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('deploy:run', (event, { cwd, target }: { cwd: string; target: DeployTarget }) => {
+    const gate = requirePro()
+    if (!gate.ok) {
+      event.sender.send('deploy:progress', { cwd, status: 'error', output: gate.error })
+      return
+    }
     runDeploy(cwd, target, event.sender)
   })
 
@@ -182,14 +202,20 @@ export function registerIpcHandlers(): void {
   // ── Git actions ────────────────────────────────────────────────────────────
 
   ipcMain.handle('git:commit', (_event, { cwd, message }: { cwd: string; message: string }) => {
+    const gate = requirePro()
+    if (!gate.ok) return { success: false, error: gate.error }
     return gitCommit(cwd, message)
   })
 
   ipcMain.handle('git:pull', (_event, { cwd }: { cwd: string }) => {
+    const gate = requirePro()
+    if (!gate.ok) return { success: false, error: gate.error }
     return gitPull(cwd)
   })
 
   ipcMain.handle('git:create-pr', (_event, { cwd }: { cwd: string }) => {
+    const gate = requirePro()
+    if (!gate.ok) return { success: false, error: gate.error }
     return gitCreatePR(cwd)
   })
 
@@ -203,14 +229,20 @@ export function registerIpcHandlers(): void {
   // ── Stats ───────────────────────────────────────────────────────────────────
 
   ipcMain.handle('stats:get-daily', (_event, cwds: string[]) => {
-    return getDailyStats(cwds)
+    const gate = requirePro()
+    if (!gate.ok) return { proRequired: true as const, ...gate }
+    return { proRequired: false as const, ...getDailyStats(cwds) }
   })
 
   ipcMain.handle('stats:get-tokens', () => {
-    return getTokenStats()
+    const gate = requirePro()
+    if (!gate.ok) return { proRequired: true as const, ...gate }
+    return { proRequired: false as const, ...getTokenStats() }
   })
 
   ipcMain.handle('stats:share', async (event, { height }: { height: number }) => {
+    const gate = requirePro()
+    if (!gate.ok) return { success: false, error: gate.error }
     try {
       const win = BrowserWindow.fromWebContents(event.sender)
       if (!win) return { success: false, error: 'No window' }
@@ -228,6 +260,67 @@ export function registerIpcHandlers(): void {
       const message = err instanceof Error ? err.message : String(err)
       return { success: false, error: message }
     }
+  })
+
+  // ── Tasks ───────────────────────────────────────────────────────────────────
+
+  ipcMain.handle('tasks:get', (_event, cwd: string) => getTasks(cwd))
+
+  ipcMain.handle('tasks:add', (_event, { cwd, text }: { cwd: string; text: string }) => {
+    const gate = requirePro()
+    if (!gate.ok) return { success: false, error: gate.error }
+    const git = getGitStatus(cwd)
+    const task = addTask(cwd, text, git)
+    return { success: true, task, tasks: getTasks(cwd) }
+  })
+
+  ipcMain.handle('tasks:toggle', (_event, { cwd, id }: { cwd: string; id: string }) => {
+    const gate = requirePro()
+    if (!gate.ok) return { success: false, error: gate.error }
+    const git = getGitStatus(cwd)
+    const tasks = toggleTask(cwd, id, git)
+    return { success: true, tasks }
+  })
+
+  ipcMain.handle('tasks:remove', (_event, { cwd, id }: { cwd: string; id: string }) => {
+    const gate = requirePro()
+    if (!gate.ok) return { success: false, error: gate.error }
+    const git = getGitStatus(cwd)
+    const tasks = removeTask(cwd, id, git)
+    return { success: true, tasks }
+  })
+
+  // ── License ─────────────────────────────────────────────────────────────────
+
+  ipcMain.handle('license:get-status', () => getLicenseStatus())
+
+  ipcMain.handle('license:activate', (_event, key: string) => activateLicense(key))
+
+  ipcMain.handle('license:deactivate', () => {
+    deactivateLicense()
+    return { success: true }
+  })
+
+  // ── Settings ────────────────────────────────────────────────────────────────
+
+  ipcMain.handle('settings:get', () => getSettings())
+
+  ipcMain.handle('settings:set-notifications', (_event, enabled: boolean) => {
+    setNotificationsEnabled(enabled)
+    setSettings({ notificationsEnabled: enabled })
+    return getSettings()
+  })
+
+  ipcMain.handle('settings:toggle-pin', (_event, cwd: string) => togglePin(cwd))
+
+  ipcMain.handle('settings:set-rename', (_event, { cwd, name }: { cwd: string; name: string }) => {
+    setRename(cwd, name)
+    return { success: true }
+  })
+
+  ipcMain.handle('app:check-updates', () => {
+    checkForUpdates()
+    return { success: true }
   })
 
 }

@@ -1,8 +1,8 @@
 # Vibestatus Notes → Tasks/Todos — Feature Plan
 
-## Status: PIVOTING
+## Status: COMPLETE
 
-The initial "notes" feature has been built (single text note per project, written to AI config files). The user wants to **pivot to tasks/todos** instead — more structured, more useful.
+Tasks/todos feature shipped. Notes v1 was never merged; tasks were built directly.
 
 ## What was built (notes v1)
 

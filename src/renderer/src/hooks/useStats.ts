@@ -2,13 +2,17 @@ import { useState, useEffect, useRef } from 'react'
 
 const POLL_INTERVAL_MS = 30_000
 
-export function useStats(cwds: string[]) {
+export function useStats(cwds: string[], isPro: boolean) {
   const [stats, setStats] = useState<DailyStats | null>(null)
   const cwdsKey = cwds.slice().sort().join('\n')
   const prevKey = useRef(cwdsKey)
 
   useEffect(() => {
-    // If cwds changed, fetch immediately
+    if (!isPro) {
+      setStats({ proRequired: true, commitsToday: 0, linesChangedToday: 0, activeProjects: 0, streakDays: 0, history: [] })
+      return
+    }
+
     const immediate = cwdsKey !== prevKey.current
     prevKey.current = cwdsKey
 
@@ -19,12 +23,10 @@ export function useStats(cwds: string[]) {
 
     const fetch = () => window.electronAPI.getDailyStats(cwds).then(setStats).catch(() => {})
 
-    if (immediate) fetch()
-    else fetch()
-
+    fetch()
     const id = setInterval(fetch, POLL_INTERVAL_MS)
     return () => clearInterval(id)
-  }, [cwdsKey])
+  }, [cwdsKey, isPro, cwds.length])
 
   return stats
 }

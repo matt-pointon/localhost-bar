@@ -3,6 +3,8 @@ import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { createPanel } from './panel'
 import { createTray } from './tray'
 import { registerIpcHandlers } from './ipc-handlers'
+import { initAutoUpdater } from './updater'
+import { getSettings } from './settings'
 
 // Enforce single instance — quit immediately if another is already running
 if (!app.requestSingleInstanceLock()) {
@@ -15,9 +17,15 @@ app.dock?.hide()
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.mattpointon.localhostbar')
 
+  const settings = getSettings()
+  if (settings.launchAtLogin) {
+    app.setLoginItemSettings({ openAtLogin: true })
+  }
+
   const panel = createPanel()
   createTray(panel)
   registerIpcHandlers()
+  initAutoUpdater()
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchShortcuts(window)

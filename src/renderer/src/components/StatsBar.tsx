@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { Share, X, Check } from 'lucide-react'
+import { Share, Check, Sparkles } from 'lucide-react'
 
 function fmt(n: number): string {
   if (n >= 10_000) return `${(n / 1000).toFixed(0)}K`
@@ -12,28 +12,68 @@ interface StatsBarProps {
   tokenStats: TokenStats | null
   serviceCount: number
   isLoading: boolean
+  isPro: boolean
   onRefresh: () => void
+  onUpgrade: () => void
 }
 
-export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh }: StatsBarProps) {
+export function StatsBar({ stats, tokenStats, serviceCount, isLoading, isPro, onRefresh, onUpgrade }: StatsBarProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [shared, setShared] = useState(false)
 
+  const proRequired = stats?.proRequired || tokenStats?.proRequired
+
   const handleShare = useCallback(async () => {
+    if (!isPro) { onUpgrade(); return }
     if (!containerRef.current) return
     const height = containerRef.current.offsetHeight
     const result = await window.electronAPI.shareStats(height)
     if (result.success) {
       setShared(true)
       setTimeout(() => setShared(false), 2000)
+    } else if (result.error?.includes('Pro')) {
+      onUpgrade()
     }
-  }, [])
+  }, [isPro, onUpgrade])
+
+  if (!isPro || proRequired) {
+    return (
+      <div
+        ref={containerRef}
+        className="drag-region no-drag"
+        style={{ padding: '12px 14px', position: 'relative', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <Sparkles size={20} style={{ color: 'var(--color-status-ai)', margin: '0 auto 8px' }} />
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-foreground)', marginBottom: 4 }}>
+            Pro Stats
+          </div>
+          <p style={{ fontSize: 10, color: 'var(--color-muted-foreground)', margin: '0 0 12px', lineHeight: 1.5 }}>
+            Daily commits, AI usage heatmap, and share cards.
+          </p>
+          <button
+            onClick={onUpgrade}
+            style={{
+              padding: '6px 14px', fontSize: 11, fontWeight: 600, borderRadius: 6,
+              border: 'none', cursor: 'pointer',
+              background: 'var(--color-status-running)', color: 'rgba(0,0,0,0.85)'
+            }}
+          >
+            Upgrade to Pro
+          </button>
+          <div style={{ marginTop: 12, fontSize: 10, color: 'var(--color-muted-foreground)' }}>
+            {serviceCount} project{serviceCount !== 1 ? 's' : ''} running
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const commitsToday = stats?.commitsToday ?? 0
   const linesChangedToday = stats?.linesChangedToday ?? 0
   const streakDays = stats?.streakDays ?? 0
   const history = stats?.history ?? []
 
-  // Token stats
   const aiItems: { value: string; label: string }[] = []
   if (tokenStats?.claudeDesktop) {
     aiItems.push({ value: fmt(tokenStats.claudeDesktop.tokens), label: 'Tokens' })
@@ -51,12 +91,8 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
     <div
       ref={containerRef}
       className="drag-region"
-      style={{
-        padding: '12px 14px 12px',
-        position: 'relative'
-      }}
+      style={{ padding: '12px 14px 12px', position: 'relative' }}
     >
-      {/* Action buttons — top right */}
       <div
         className="no-drag"
         style={{ position: 'absolute', top: 12, right: 14, display: 'flex', gap: 2 }}
@@ -66,7 +102,6 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
         </HeaderBtn>
       </div>
 
-      {/* Top stat numbers */}
       <div style={{ display: 'flex', gap: 20, marginBottom: 14 }}>
         {linesChangedToday > 0 && (
           <StatNumber value={fmt(linesChangedToday)} label={linesChangedToday === 1 ? 'Line' : 'Lines'} />
@@ -83,9 +118,11 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
         {aiPercent > 0 && (
           <StatNumber value={`${aiPercent}%`} label="AI Code" color="var(--color-status-ai)" />
         )}
+        {!isLoading && commitsToday === 0 && linesChangedToday === 0 && streakDays === 0 && aiItems.length === 0 && (
+          <StatNumber value="—" label="Today" />
+        )}
       </div>
 
-      {/* 30-day activity heatmap */}
       <ActivityGrid history={history} />
     </div>
   )
@@ -127,7 +164,6 @@ function HeaderBtn({ title, onClick, children }: { title: string; onClick: () =>
   )
 }
 
-// GitHub-style 30-day contribution heatmap
 function ActivityGrid({ history }: { history: DayActivity[] }) {
   const [hoveredDay, setHoveredDay] = useState<{ date: string; commits: number; lines: number } | null>(null)
 
@@ -168,7 +204,6 @@ function ActivityGrid({ history }: { history: DayActivity[] }) {
     'oklch(0.70 0.17 145)'
   ]
 
-  // Format date nicely: "Jun 24"
   const fmtDate = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00:00')
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -179,13 +214,7 @@ function ActivityGrid({ history }: { history: DayActivity[] }) {
 
   return (
     <div className="no-drag" style={{ position: 'relative' }}>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${COLS}, 1fr)`,
-          gap: 3
-        }}
-      >
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, gap: 3 }}>
         {days.map((day, i) => {
           const isToday = i === days.length - 1
           const isHovered = hoveredDay?.date === day.date
@@ -199,9 +228,7 @@ function ActivityGrid({ history }: { history: DayActivity[] }) {
                 aspectRatio: '1',
                 borderRadius: 3,
                 background: colors[day.level],
-                border: showBorder
-                  ? '1px solid rgba(255, 255, 255, 0.25)'
-                  : '1px solid transparent',
+                border: showBorder ? '1px solid rgba(255, 255, 255, 0.25)' : '1px solid transparent',
                 transition: 'border 100ms, background 300ms',
                 cursor: 'default'
               }}
@@ -210,15 +237,10 @@ function ActivityGrid({ history }: { history: DayActivity[] }) {
         })}
       </div>
 
-      {/* Day info — always visible, shows today by default */}
       {displayDay && (
         <div style={{
-          marginTop: 6,
-          fontSize: 10,
-          color: 'var(--color-muted-foreground)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8
+          marginTop: 6, fontSize: 10, color: 'var(--color-muted-foreground)',
+          display: 'flex', alignItems: 'center', gap: 8
         }}>
           <span style={{ color: 'var(--color-foreground)', fontWeight: 600 }}>
             {!hoveredDay || displayDay === todayDay ? 'Today' : fmtDate(displayDay.date)}
