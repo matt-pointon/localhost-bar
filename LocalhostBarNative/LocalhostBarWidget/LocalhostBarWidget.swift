@@ -166,7 +166,6 @@ struct MediumWidgetView: View {
 
 // MARK: - Widget Configuration
 
-@main
 struct LocalhostBarWidget: Widget {
     let kind: String = "LocalhostBarWidget"
     
@@ -177,6 +176,15 @@ struct LocalhostBarWidget: Widget {
         .configurationDisplayName("Running Servers")
         .description("Shows how many development servers are currently running on localhost.")
         .supportedFamilies([.systemSmall, .systemMedium])
+    }
+}
+
+// MARK: - Widget Bundle
+
+@main
+struct LocalhostBarWidgetBundle: WidgetBundle {
+    var body: some Widget {
+        LocalhostBarWidget()
     }
 }
 
