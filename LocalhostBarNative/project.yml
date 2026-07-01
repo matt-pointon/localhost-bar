@@ -6,6 +6,8 @@ options:
   xcodeVersion: "15.0"
   generateEmptyDirectories: true
   groupSortPosition: top
+  minimumXcodeGenVersion: "2.38.0"
+  projectFileVersion: "56"
 
 settings:
   base:
