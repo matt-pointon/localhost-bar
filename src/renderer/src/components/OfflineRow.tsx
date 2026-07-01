@@ -18,7 +18,7 @@ export function OfflineRow({ service, onRestart, onDismiss }: OfflineRowProps) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        padding: '7px 12px',
+        padding: '8px 12px',
         display: 'flex',
         alignItems: 'center',
         gap: 8,
@@ -79,7 +79,7 @@ function OfflineBtn({ title, onClick, hoverColor, children }: {
       title={title}
       onClick={onClick}
       style={{
-        padding: 4, borderRadius: 5, border: 'none', background: 'transparent',
+        padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
         cursor: 'pointer', color: 'var(--color-muted-foreground)',
         display: 'flex', alignItems: 'center', transition: 'all 100ms'
       }}
