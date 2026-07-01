@@ -1,6 +1,34 @@
 import Foundation
 import Combine
 
+// Constants moved outside the class to avoid Sendable warnings
+private let devPortMin = 1024
+private let devPortMax = 9999
+
+private let devCommandAllowlist: Set<String> = [
+    "node", "bun", "deno",
+    "python", "python3", "python2",
+    "ruby", "php", "java", "go",
+    "vite", "next-se", "cargo", "pnpm",
+    "npx", "yarn", "uvicorn", "gunicorn",
+    "rails", "flask", "django-adm"
+]
+
+private let commandDisplayNames: [String: String] = [
+    "node": "Node.js",
+    "bun": "Bun",
+    "deno": "Deno",
+    "python": "Python",
+    "python3": "Python",
+    "ruby": "Ruby",
+    "php": "PHP",
+    "java": "Java",
+    "go": "Go",
+    "next-se": "Next.js",
+    "vite": "Vite",
+    "cargo": "Rust"
+]
+
 @MainActor
 class PortScanner: ObservableObject {
     @Published private(set) var services: [ServiceInfo] = []
@@ -9,33 +37,6 @@ class PortScanner: ObservableObject {
     
     private var scanTimer: Timer?
     private let scanInterval: TimeInterval = 3.0
-    
-    private static let devPortMin = 1024
-    private static let devPortMax = 9999
-    
-    private static let devCommandAllowlist: Set<String> = [
-        "node", "bun", "deno",
-        "python", "python3", "python2",
-        "ruby", "php", "java", "go",
-        "vite", "next-se", "cargo", "pnpm",
-        "npx", "yarn", "uvicorn", "gunicorn",
-        "rails", "flask", "django-adm"
-    ]
-    
-    private static let commandDisplayNames: [String: String] = [
-        "node": "Node.js",
-        "bun": "Bun",
-        "deno": "Deno",
-        "python": "Python",
-        "python3": "Python",
-        "ruby": "Ruby",
-        "php": "PHP",
-        "java": "Java",
-        "go": "Go",
-        "next-se": "Next.js",
-        "vite": "Vite",
-        "cargo": "Rust"
-    ]
     
     func startScanning() {
         guard scanTimer == nil else { return }
@@ -72,7 +73,7 @@ class PortScanner: ObservableObject {
                 pid: entry.pid,
                 port: entry.port,
                 name: processInfo.name,
-                command: Self.commandDisplayNames[entry.command] ?? entry.command,
+                command: commandDisplayNames[entry.command] ?? entry.command,
                 address: entry.address,
                 cwd: processInfo.cwd,
                 args: processInfo.args,
@@ -84,7 +85,6 @@ class PortScanner: ObservableObject {
         
         // Detect services that went offline
         let currentPorts = Set(newServices.map { $0.port })
-        let previousPorts = Set(services.map { $0.port })
         let goneOffline = services.filter { !currentPorts.contains($0.port) }
         
         for service in goneOffline {
@@ -195,7 +195,7 @@ class PortScanner: ObservableObject {
                         
                         let command = String(parts[0])
                         guard let pid = Int(parts[1]) else { continue }
-                        guard Self.devCommandAllowlist.contains(command) else { continue }
+                        guard devCommandAllowlist.contains(command) else { continue }
                         
                         // lsof appends "(LISTEN)" as a separate token
                         let rawName = String(parts[parts.count - 1])
@@ -206,8 +206,8 @@ class PortScanner: ObservableObject {
                         let address = String(name[..<colonIdx])
                         
                         guard let port = Int(portStr),
-                              port >= Self.devPortMin,
-                              port <= Self.devPortMax else { continue }
+                              port >= devPortMin,
+                              port <= devPortMax else { continue }
                         
                         // Deduplicate: same PID+port can appear for both IPv4 and IPv6
                         if !entries.contains(where: { $0.pid == pid && $0.port == port }) {
@@ -258,7 +258,7 @@ class PortScanner: ObservableObject {
         
         // Fallback: use the command name
         return ProcessInfo(
-            name: Self.commandDisplayNames[rawCommand] ?? formatName(rawCommand),
+            name: commandDisplayNames[rawCommand] ?? formatName(rawCommand),
             cwd: cwd,
             args: args
         )
