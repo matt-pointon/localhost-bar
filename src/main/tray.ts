@@ -1,11 +1,47 @@
-import { Tray, BrowserWindow, nativeImage, screen } from 'electron'
+import { Tray, BrowserWindow, nativeImage, screen, app } from 'electron'
 import { join } from 'path'
+import { existsSync, readFileSync } from 'fs'
 
 let trayInstance: Tray | null = null
 
 export function createTray(panel: BrowserWindow): Tray {
-  const iconPath = join(__dirname, '../../build/icon.png')
-  const icon = nativeImage.createFromPath(iconPath)
+  // In dev mode, __dirname is out/main, so ../../build/icon.png works
+  // In production, we need to use resources path
+  const isDev = !app.isPackaged
+  
+  let iconDir: string
+  if (isDev) {
+    // Development: icons are in build/ relative to project root
+    iconDir = join(__dirname, '../../build')
+  } else {
+    // Production: icons should be in resources
+    iconDir = process.resourcesPath
+  }
+  
+  const iconPath1x = join(iconDir, 'icon.png')
+  const iconPath2x = join(iconDir, 'icon@2x.png')
+  
+  // Create image with both 1x and 2x representations for Retina/HiDPI support
+  const icon = nativeImage.createEmpty()
+  
+  if (existsSync(iconPath1x)) {
+    icon.addRepresentation({
+      scaleFactor: 1.0,
+      buffer: readFileSync(iconPath1x)
+    })
+  }
+  
+  if (existsSync(iconPath2x)) {
+    icon.addRepresentation({
+      scaleFactor: 2.0,
+      buffer: readFileSync(iconPath2x)
+    })
+  }
+  
+  if (icon.isEmpty()) {
+    console.error('[Tray] Failed to load icon from', iconDir)
+  }
+  
   icon.setTemplateImage(true) // Auto-inverts for dark/light menu bar
 
   trayInstance = new Tray(icon)
