@@ -8,22 +8,27 @@ import { ServiceList } from './components/ServiceList'
 import { EmptyState } from './components/EmptyState'
 import { OfflineRow } from './components/OfflineRow'
 import { GradientBackground } from './components/GradientBackground'
-import { X } from 'lucide-react'
+import { PortConflictBanner } from './components/PortConflictBanner'
+import { SearchBar } from './components/SearchBar'
+import { X, Bell, BellOff } from 'lucide-react'
 import type { DetectedTool } from './components/QuickActionsMenu'
 
 export default function App() {
   const [availableTools, setAvailableTools] = useState<DetectedTool[]>([])
+  const [search, setSearch] = useState('')
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const { states: deployStates, deploy, setLastDeploy } = useDeployState()
 
   useEffect(() => {
     window.electronAPI.getAvailableTools().then(setAvailableTools)
+    window.electronAPI.getSettings().then(s => setNotificationsEnabled(s.notificationsEnabled))
   }, [])
 
   const {
     services,
     offlineServices,
+    portConflicts,
     isLoading,
-    lastUpdated,
     refresh,
     killService,
     openService,
@@ -41,6 +46,12 @@ export default function App() {
   const hasRunning = services.length > 0
   const hasOffline = offlineServices.length > 0
 
+  const toggleNotifications = async () => {
+    const next = !notificationsEnabled
+    const s = await window.electronAPI.setNotificationsEnabled(next)
+    setNotificationsEnabled(s.notificationsEnabled)
+  }
+
   return (
     <div
       style={{
@@ -54,32 +65,31 @@ export default function App() {
     >
       <GradientBackground />
 
-      {/* Close button — top right of panel, above everything */}
-      <button
-        className="no-drag"
-        onClick={() => window.electronAPI.quit()}
-        title="Quit"
-        style={{
-          position: 'absolute',
-          top: 10,
-          right: 10,
-          zIndex: 20,
-          padding: 4,
-          borderRadius: 5,
-          border: 'none',
-          background: 'transparent',
-          cursor: 'pointer',
-          color: 'var(--color-muted-foreground)',
-          display: 'flex',
-          alignItems: 'center'
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-hover-overlay)'; e.currentTarget.style.color = 'var(--color-foreground)' }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-muted-foreground)' }}
-      >
-        <X size={12} />
-      </button>
+      <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 20, display: 'flex', gap: 2 }}>
+        <button
+          className="no-drag"
+          onClick={toggleNotifications}
+          title={notificationsEnabled ? 'Notifications on' : 'Notifications off'}
+          style={{
+            padding: 4, borderRadius: 5, border: 'none', background: 'transparent',
+            cursor: 'pointer', color: 'var(--color-muted-foreground)', display: 'flex'
+          }}
+        >
+          {notificationsEnabled ? <Bell size={12} /> : <BellOff size={12} />}
+        </button>
+        <button
+          className="no-drag"
+          onClick={() => window.electronAPI.quit()}
+          title="Quit"
+          style={{
+            padding: 4, borderRadius: 5, border: 'none', background: 'transparent',
+            cursor: 'pointer', color: 'var(--color-muted-foreground)', display: 'flex'
+          }}
+        >
+          <X size={12} />
+        </button>
+      </div>
 
-      {/* Glass content layer — side by side */}
       <div
         style={{
           position: 'relative',
@@ -89,15 +99,9 @@ export default function App() {
           display: 'flex'
         }}
       >
-        {/* Left: Stats + heatmap */}
         <div
           className="drag-region"
-          style={{
-            width: '44%',
-            overflow: 'hidden',
-            flexShrink: 0,
-            alignSelf: 'stretch'
-          }}
+          style={{ width: '44%', overflow: 'hidden', flexShrink: 0, alignSelf: 'stretch' }}
         >
           <StatsBar
             stats={stats}
@@ -108,25 +112,9 @@ export default function App() {
           />
         </div>
 
-        {/* Center divider — short, centered */}
-        <div style={{
-          width: 1,
-          height: '60%',
-          background: 'rgba(255,255,255,0.06)',
-          flexShrink: 0
-        }} />
+        <div style={{ width: 1, height: '60%', background: 'rgba(255,255,255,0.06)', flexShrink: 0, alignSelf: 'center' }} />
 
-        {/* Right: Project list */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            height: '100%'
-          }}
-        >
-          {/* Title */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100%' }}>
           <div className="drag-region" style={{
             padding: '10px 14px 4px',
             display: 'flex',
@@ -134,15 +122,15 @@ export default function App() {
             justifyContent: 'space-between'
           }}>
             <span style={{
-              fontSize: 10,
-              fontWeight: 500,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              color: 'var(--color-muted-foreground)'
+              fontSize: 10, fontWeight: 500, textTransform: 'uppercase',
+              letterSpacing: '0.05em', color: 'var(--color-muted-foreground)'
             }}>
               {services.length} Project{services.length !== 1 ? 's' : ''} Running
             </span>
           </div>
+
+          <SearchBar value={search} onChange={setSearch} />
+          <PortConflictBanner conflicts={portConflicts} />
 
           <div className="flex-1 overflow-y-auto show-scrollbar">
             {!hasRunning && !hasOffline && !isLoading ? (
@@ -152,12 +140,14 @@ export default function App() {
                 {hasRunning && (
                   <ServiceList
                     services={services}
+                    search={search}
                     onOpen={openService}
                     onKill={killService}
                     availableTools={availableTools}
                     deployStates={deployStates}
                     onDeploy={deploy}
                     onSetLastDeploy={setLastDeploy}
+                    onRefresh={refresh}
                   />
                 )}
 

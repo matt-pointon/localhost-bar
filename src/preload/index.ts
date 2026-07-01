@@ -44,6 +44,11 @@ export interface GitStatus {
   lastCommit: string
 }
 
+export interface ResourceUsage {
+  cpu: number
+  mem: number
+}
+
 export interface ServiceInfo {
   pid: number
   port: number
@@ -54,6 +59,27 @@ export interface ServiceInfo {
   cwd: string | null
   args: string | null
   git: GitStatus | null
+  resources: ResourceUsage | null
+  stackTags: string[]
+  originTools: string[]
+  activeAgents: string[]
+  pinned: boolean
+}
+
+export interface PortConflict {
+  port: number
+  services: { name: string; pid: number }[]
+}
+
+export interface ScanResult {
+  services: ServiceInfo[]
+  portConflicts: PortConflict[]
+}
+
+export interface Task {
+  id: string
+  text: string
+  done: boolean
 }
 
 export interface GitActionResult {
@@ -62,11 +88,18 @@ export interface GitActionResult {
   url?: string
 }
 
+export interface DayActivity {
+  date: string
+  commits: number
+  lines: number
+}
+
 export interface DailyStats {
   commitsToday: number
   linesChangedToday: number
   activeProjects: number
   streakDays: number
+  history: DayActivity[]
 }
 
 export interface TokenStats {
@@ -80,8 +113,15 @@ export interface GitInfo {
   defaultBranch: string | null
 }
 
+export interface AppSettings {
+  notificationsEnabled: boolean
+  launchAtLogin: boolean
+  pins: string[]
+  renames: Record<string, string>
+}
+
 export interface ElectronAPI {
-  scanPorts: () => Promise<ServiceInfo[]>
+  scanPorts: () => Promise<ScanResult>
   killProcess: (pid: number) => Promise<{ success: boolean; error?: string }>
   openInBrowser: (port: number) => Promise<void>
   quit: () => Promise<void>
@@ -99,6 +139,16 @@ export interface ElectronAPI {
   gitGetInfo: (cwd: string) => Promise<GitInfo>
   getDailyStats: (cwds: string[]) => Promise<DailyStats>
   getTokenStats: () => Promise<TokenStats>
+  shareStats: (height: number) => Promise<{ success: boolean; error?: string }>
+  getTasks: (cwd: string) => Promise<Task[]>
+  addTask: (cwd: string, text: string) => Promise<{ success: boolean; tasks?: Task[]; error?: string }>
+  toggleTask: (cwd: string, id: string) => Promise<{ success: boolean; tasks?: Task[]; error?: string }>
+  removeTask: (cwd: string, id: string) => Promise<{ success: boolean; tasks?: Task[]; error?: string }>
+  getSettings: () => Promise<AppSettings>
+  setNotificationsEnabled: (enabled: boolean) => Promise<AppSettings>
+  togglePin: (cwd: string) => Promise<boolean>
+  setRename: (cwd: string, name: string) => Promise<{ success: boolean }>
+  checkForUpdates: () => Promise<{ success: boolean }>
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -124,5 +174,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   getDailyStats: (cwds: string[]) => ipcRenderer.invoke('stats:get-daily', cwds),
   getTokenStats: () => ipcRenderer.invoke('stats:get-tokens'),
-  shareStats: (height: number) => ipcRenderer.invoke('stats:share', { height })
+  shareStats: (height: number) => ipcRenderer.invoke('stats:share', { height }),
+  getTasks: (cwd: string) => ipcRenderer.invoke('tasks:get', cwd),
+  addTask: (cwd: string, text: string) => ipcRenderer.invoke('tasks:add', { cwd, text }),
+  toggleTask: (cwd: string, id: string) => ipcRenderer.invoke('tasks:toggle', { cwd, id }),
+  removeTask: (cwd: string, id: string) => ipcRenderer.invoke('tasks:remove', { cwd, id }),
+  getSettings: () => ipcRenderer.invoke('settings:get'),
+  setNotificationsEnabled: (enabled: boolean) => ipcRenderer.invoke('settings:set-notifications', enabled),
+  togglePin: (cwd: string) => ipcRenderer.invoke('settings:toggle-pin', cwd),
+  setRename: (cwd: string, name: string) => ipcRenderer.invoke('settings:set-rename', { cwd, name }),
+  checkForUpdates: () => ipcRenderer.invoke('app:check-updates')
 } satisfies ElectronAPI)

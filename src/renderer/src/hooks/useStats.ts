@@ -8,7 +8,6 @@ export function useStats(cwds: string[]) {
   const prevKey = useRef(cwdsKey)
 
   useEffect(() => {
-    // If cwds changed, fetch immediately
     const immediate = cwdsKey !== prevKey.current
     prevKey.current = cwdsKey
 
@@ -19,12 +18,10 @@ export function useStats(cwds: string[]) {
 
     const fetch = () => window.electronAPI.getDailyStats(cwds).then(setStats).catch(() => {})
 
-    if (immediate) fetch()
-    else fetch()
-
+    fetch()
     const id = setInterval(fetch, POLL_INTERVAL_MS)
     return () => clearInterval(id)
-  }, [cwdsKey])
+  }, [cwdsKey, cwds.length])
 
   return stats
 }

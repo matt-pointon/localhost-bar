@@ -6,15 +6,20 @@ A macOS menu bar app for designers and vibe coders that shows all running localh
 
 - Sits in the macOS menu bar, opens a panel on click
 - Scans for localhost ports every 3 seconds using `lsof`
-- Only shows dev runtimes (node, bun, deno, python, ruby, etc.) — filters out system services like Spotify, Framer
-- Shows service name, port, command, git branch + changes + last commit
-- Detects which AI tools are active in the project (Cursor, Claude, Windsurf, Copilot, Codex)
-- Tracks services that go offline and shows them in an "Offline" section with restart/dismiss
-- Quick actions per service: open in browser, open in Finder, open in editor (VS Code / Cursor / Windsurf), open terminal, open Claude Code
+- Only shows dev runtimes (node, bun, deno, python, ruby, etc.) — filters out system services
+- Shows service name, port, git branch + changes, stack tags, memory usage
+- Per-project AI origin badges (Cursor, Claude, etc.) and active agent indicators ("Who's coding?")
+- Port conflict warnings when multiple services share a port
+- Project tasks accordion (Pro) — checklist synced to AI config files
+- Tracks offline services with restart/dismiss
+- Quick actions: open in browser, Finder, editors, terminals, Claude Code, deploy (Pro), git (Pro)
+- Daily stats + AI usage heatmap (Pro), share to clipboard (Pro)
+- Search/filter, pin, and rename projects
+- Notifications for service online/offline/conflict events (toggle in header)
 
 ## Stack
 
-- Electron + electron-vite
+- Electron + electron-vite + electron-updater
 - React 19 + TypeScript
 - Tailwind v4
 - `lsof` for port scanning (macOS only)
@@ -24,65 +29,60 @@ A macOS menu bar app for designers and vibe coders that shows all running localh
 ```
 src/
   main/
-    index.ts                        # Electron app entry, creates tray + panel
+    index.ts                        # App entry, tray + panel, auto-updater
     tray.ts                         # Menu bar tray icon
-    panel.ts                        # Floating panel window
-    ipc-handlers.ts                 # IPC: kill, open-folder, open-with, restart-service, get-installed-tools
-    tool-checker.ts                 # Checks which CLIs are installed (code, cursor, windsurf, claude, iterm2)
+    panel.ts                        # Floating panel window (560×290)
+    ipc-handlers.ts                 # IPC handlers + Pro gating
+    tool-registry.ts                # Global installed-tool detection
+    settings.ts                     # Pins, renames, notifications
+    notifications.ts                # Electron Notification wrapper
+    scan-tracker.ts                 # Service lifecycle diff → notifications
+    updater.ts                      # electron-updater
     port-scanner/
-      index.ts                      # Main scanPorts() — orchestrates lsof, name, tools, git
-      lsof-parser.ts                # Parses lsof output, filters to DEV_COMMAND_ALLOWLIST
-      name-inferrer.ts              # Infers human-readable name from command/cwd
-      tool-detector.ts              # Detects AI tools from filesystem markers + editor storage.json
-      git-status.ts                 # Git branch/changes/last commit with 30s per-cwd cache
-  preload/
-    index.ts                        # contextBridge — exposes ElectronAPI to renderer
-  renderer/
-    src/
-      App.tsx                       # Root: running services + offline section
-      hooks/useServices.ts          # 3s polling, service state, offline tracking, animations
-      components/
-        Header.tsx                  # Title bar with refresh + quit
-        ServiceList.tsx             # List of running ServiceRows
-        ServiceRow.tsx              # One row: status dot, name, command, git, tool icons, actions
-        OfflineRow.tsx              # Offline row with restart / open-folder / dismiss
-        QuickActionsMenu.tsx        # ⋯ dropdown portal: Finder, editors, terminal, Claude Code
-        ToolIcons.tsx               # SVG icons for Cursor, Claude, Windsurf, Copilot, Codex, Aider
-        EmptyState.tsx              # Shown when no services running
+      index.ts                      # scanPorts() → { services, portConflicts }
+      lsof-parser.ts                # Parses lsof, DEV_COMMAND_ALLOWLIST filter
+      name-inferrer.ts              # Human-readable name from command/cwd
+      git-status.ts                 # Git branch/changes/last commit (30s cache)
+      stack-tags.ts                 # Top 3 stack tags from manifest files
+      tool-detector.ts              # Per-project AI origin markers
+      agent-detector.ts             # Active AI agents per project
+      port-conflicts.ts             # Same-port conflict detection
+    tasks/
+      store.ts                      # Task CRUD in userData
+      config-writer.ts              # Sync tasks to CLAUDE.md, .cursorrules, etc.
+    deploy/                         # Vercel / Railway / Netlify integration
+    stats/                          # Daily commits/lines/streak
+    token-stats/                    # Cursor, Claude Desktop, Claude Code usage
+  preload/index.ts                  # contextBridge API
+  renderer/src/
+    App.tsx                         # Panel layout: stats + project list
+    hooks/
+      useServices.ts                # 3s polling, offline tracking
+      useTasks.ts                   # Per-project tasks
+      useStats.ts / useTokenStats.ts
+    components/
+      ServiceList.tsx               # Service rows (git, tags, copy URL, tasks)
+      QuickActionsMenu.tsx          # Deploy, git, open-in menu
+      StatsBar.tsx                  # Heatmap + share
+      ToolIcons.tsx                 # Origin + active agent badges
+      TaskList.tsx                  # Accordion checklist
+      PortConflictBanner.tsx
+      SearchBar.tsx
+      OfflineRow.tsx / EmptyState.tsx
 ```
 
 ## Key decisions
 
 - **Allowlist not blocklist** for port filtering — only show known dev runtimes
-- **Dual tool detection** — filesystem markers (`.cursor/`, `.claude/`) AND Cursor's `storage.json` windowsState (catches projects with no config files)
-- **Synchronous ref mirror** (`servicesRef`) in useServices — avoids React async state timing issues during 3s poll intervals
-- **200ms exit animation** — items stay in source section briefly before moving to destination (running ↔ offline)
-- **Portal dropdowns** — QuickActionsMenu renders into `document.body` to avoid overflow clipping
-- **Retina tray icon** — `build/icon.png` (16×16) + `build/icon@2x.png` (32×32) with `setTemplateImage`
-
-## Plans & documentation
-
-- Project plans and documentation go in `/docs/` as markdown `.md` files
-- When creating or updating a plan, save it to `docs/` (e.g. `docs/plan.md`, `docs/feature-xyz.md`)
-- Full project plan: `docs/PROJECT_PLAN.md`
+- **Dual tool detection** — global registry for "Open in" menu + per-project origin markers for badges + process-based active agent detection
+- **Synchronous ref mirror** (`servicesRef`) in useServices — avoids React async state timing issues
+- **Portal dropdowns** — QuickActionsMenu renders into `document.body`
 
 ## Project status
 
-Phase 1 (working prototype) and Phase 3 (deploy integration) are complete.
-Phase 2 is mostly done — remaining work:
+Phases 1–4 complete. Auto-update infrastructure in place.
 
-- [ ] Port conflict detection and warning
-- [ ] Stack tags per project (top 3: framework, db, UI) from package.json/pyproject.toml/Cargo.toml
-- [ ] Project tasks/todos (pivoted from notes — accordion UI under each service, animated, writes to AI config files)
-
-Nice to have:
-- [ ] Bolt / Lovable / v0 tool detection
-- [ ] Broader tech stack detection beyond deploy-focused parsing
-
-## Change log
-
-- **2026-04-01** — Created project plan (`docs/PROJECT_PLAN.md`). Audited codebase against original plan: Phase 1 complete (auto-discovery replaced config file approach), Phase 2 mostly done (git status works, stack tags/port conflicts/notes outstanding), Phase 3 deploy integration complete (Vercel/Railway/Netlify with URL history).
-- **2026-04-01** — Built notes v1 feature (single note per project, written to AI config files with fenced markers). User pivoted to tasks/todos instead: accordion UI under each service row, checklist format, animated additions, still writes to AI config files. Notes v1 code exists but needs refactoring into tasks. See `docs/vibestatus-notes.md` for full plan.
+Remaining nice-to-have: health checks, launch-at-login UI, monorepo grouping, branded share templates.
 
 ## Running
 

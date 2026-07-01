@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { Share, X, Check } from 'lucide-react'
+import { Share, Check } from 'lucide-react'
 
 function fmt(n: number): string {
   if (n >= 10_000) return `${(n / 1000).toFixed(0)}K`
@@ -28,12 +28,12 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
       setTimeout(() => setShared(false), 2000)
     }
   }, [])
+
   const commitsToday = stats?.commitsToday ?? 0
   const linesChangedToday = stats?.linesChangedToday ?? 0
   const streakDays = stats?.streakDays ?? 0
   const history = stats?.history ?? []
 
-  // Token stats
   const aiItems: { value: string; label: string }[] = []
   if (tokenStats?.claudeDesktop) {
     aiItems.push({ value: fmt(tokenStats.claudeDesktop.tokens), label: 'Tokens' })
@@ -51,12 +51,8 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
     <div
       ref={containerRef}
       className="drag-region"
-      style={{
-        padding: '12px 14px 12px',
-        position: 'relative'
-      }}
+      style={{ padding: '12px 14px 12px', position: 'relative' }}
     >
-      {/* Action buttons — top right */}
       <div
         className="no-drag"
         style={{ position: 'absolute', top: 12, right: 14, display: 'flex', gap: 2 }}
@@ -66,7 +62,6 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
         </HeaderBtn>
       </div>
 
-      {/* Top stat numbers */}
       <div style={{ display: 'flex', gap: 20, marginBottom: 14 }}>
         {linesChangedToday > 0 && (
           <StatNumber value={fmt(linesChangedToday)} label={linesChangedToday === 1 ? 'Line' : 'Lines'} />
@@ -83,9 +78,11 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
         {aiPercent > 0 && (
           <StatNumber value={`${aiPercent}%`} label="AI Code" color="var(--color-status-ai)" />
         )}
+        {!isLoading && commitsToday === 0 && linesChangedToday === 0 && streakDays === 0 && aiItems.length === 0 && (
+          <StatNumber value="—" label="Today" />
+        )}
       </div>
 
-      {/* 30-day activity heatmap */}
       <ActivityGrid history={history} />
     </div>
   )
@@ -127,7 +124,6 @@ function HeaderBtn({ title, onClick, children }: { title: string; onClick: () =>
   )
 }
 
-// GitHub-style 30-day contribution heatmap
 function ActivityGrid({ history }: { history: DayActivity[] }) {
   const [hoveredDay, setHoveredDay] = useState<{ date: string; commits: number; lines: number } | null>(null)
 
@@ -168,7 +164,6 @@ function ActivityGrid({ history }: { history: DayActivity[] }) {
     'oklch(0.70 0.17 145)'
   ]
 
-  // Format date nicely: "Jun 24"
   const fmtDate = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00:00')
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -179,13 +174,7 @@ function ActivityGrid({ history }: { history: DayActivity[] }) {
 
   return (
     <div className="no-drag" style={{ position: 'relative' }}>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${COLS}, 1fr)`,
-          gap: 3
-        }}
-      >
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, gap: 3 }}>
         {days.map((day, i) => {
           const isToday = i === days.length - 1
           const isHovered = hoveredDay?.date === day.date
@@ -199,9 +188,7 @@ function ActivityGrid({ history }: { history: DayActivity[] }) {
                 aspectRatio: '1',
                 borderRadius: 3,
                 background: colors[day.level],
-                border: showBorder
-                  ? '1px solid rgba(255, 255, 255, 0.25)'
-                  : '1px solid transparent',
+                border: showBorder ? '1px solid rgba(255, 255, 255, 0.25)' : '1px solid transparent',
                 transition: 'border 100ms, background 300ms',
                 cursor: 'default'
               }}
@@ -210,15 +197,10 @@ function ActivityGrid({ history }: { history: DayActivity[] }) {
         })}
       </div>
 
-      {/* Day info — always visible, shows today by default */}
       {displayDay && (
         <div style={{
-          marginTop: 6,
-          fontSize: 10,
-          color: 'var(--color-muted-foreground)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8
+          marginTop: 6, fontSize: 10, color: 'var(--color-muted-foreground)',
+          display: 'flex', alignItems: 'center', gap: 8
         }}>
           <span style={{ color: 'var(--color-foreground)', fontWeight: 600 }}>
             {!hoveredDay || displayDay === todayDay ? 'Today' : fmtDate(displayDay.date)}

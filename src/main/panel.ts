@@ -8,13 +8,13 @@ export function createPanel(): BrowserWindow {
   panelWindow = new BrowserWindow({
     width: 560,
     height: 290,
-    show: false,
+    show: process.env['LB_DEMO'] === '1',
     frame: false,
     resizable: false,
     movable: false,
     alwaysOnTop: true,
     skipTaskbar: true,
-    transparent: true,
+    transparent: process.env['LB_DEMO'] !== '1',
     vibrancy: 'menu',
     visualEffectState: 'active',
     roundedCorners: true,
@@ -27,9 +27,11 @@ export function createPanel(): BrowserWindow {
   })
 
   // Auto-hide when clicking outside the panel
-  panelWindow.on('blur', () => {
-    panelWindow?.hide()
-  })
+  if (process.env['LB_DEMO'] !== '1') {
+    panelWindow.on('blur', () => {
+      panelWindow?.hide()
+    })
+  }
 
   panelWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)
