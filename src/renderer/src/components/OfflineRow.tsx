@@ -57,7 +57,7 @@ export function OfflineRow({ service, onRestart, onDismiss }: OfflineRowProps) {
         display: 'flex', alignItems: 'center', gap: 1, paddingLeft: 34,
         opacity: hovered ? 1 : 0, pointerEvents: hovered ? 'auto' : 'none',
         transition: 'opacity 120ms ease',
-        background: 'linear-gradient(to right, rgba(10,14,11,0) 0%, rgba(10,14,11,0.97) 30px)',
+        background: 'linear-gradient(to right, rgba(15,19,16,0) 0%, rgb(15,19,16) 38px)',
         borderRadius: 8
       }}>
         {service.cwd && (

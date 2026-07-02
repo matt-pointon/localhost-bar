@@ -224,7 +224,7 @@ function ServiceRow({
             opacity: hovered && !renaming ? 1 : 0,
             pointerEvents: hovered && !renaming ? 'auto' : 'none',
             transition: 'opacity 120ms ease',
-            background: 'linear-gradient(to right, rgba(10,14,11,0) 0%, rgba(10,14,11,0.97) 30px)',
+            background: 'linear-gradient(to right, rgba(15,19,16,0) 0%, rgb(15,19,16) 38px)',
             borderRadius: 8
           }}
         >
