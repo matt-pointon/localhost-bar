@@ -126,19 +126,20 @@ export default function App() {
             padding: '12px 16px 4px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            minHeight: 28
           }}>
             <span style={{
               fontSize: 10, fontWeight: 500, textTransform: 'uppercase',
-              letterSpacing: '0.05em', color: 'var(--color-muted-foreground)'
+              letterSpacing: '0.05em', color: 'var(--color-muted-foreground)',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
             }}>
               {hoveredDay
-                ? `${hoveredDay.projects.length} Project${hoveredDay.projects.length !== 1 ? 's' : ''} · ${formatDayLabel(hoveredDay.date)}`
+                ? `${formatDayLabel(hoveredDay.date)} · ${hoveredDay.commits} commit${hoveredDay.commits !== 1 ? 's' : ''} · ${fmtLines(hoveredDay.lines)} lines`
                 : `${services.length} Project${services.length !== 1 ? 's' : ''} Running`}
             </span>
           </div>
 
-          <SearchBar value={search} onChange={setSearch} />
+          {!hoveredDay && <SearchBar value={search} onChange={setSearch} />}
           <PortConflictBanner conflicts={portConflicts} />
 
           <div className="flex-1 overflow-y-auto show-scrollbar">
@@ -197,4 +198,10 @@ function formatDayLabel(dateStr: string): string {
   if (dateStr === localDateStr()) return 'Today'
   const d = new Date(dateStr + 'T12:00:00')
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
+function fmtLines(n: number): string {
+  if (n >= 10_000) return `${(n / 1000).toFixed(0)}K`
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`
+  return n.toString()
 }

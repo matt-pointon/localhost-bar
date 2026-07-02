@@ -254,11 +254,6 @@ function ActivityGrid({
     'oklch(0.70 0.17 145)'
   ]
 
-  const fmtDate = (dateStr: string) => {
-    const d = new Date(dateStr + 'T12:00:00')
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  }
-
   const toDayActivity = (day: GridDay): DayActivity => ({
     date: day.date,
     commits: day.commits,
@@ -266,11 +261,6 @@ function ActivityGrid({
     tokens: day.tokens,
     projects: day.projects
   })
-
-  const byDate = new Map(days.map(d => [d.date, d]))
-  const todayDay = days[days.length - 1]
-  const selectedDay = selectedDate ? byDate.get(selectedDate) ?? null : null
-  const hoveredDay = hoveredDate ? byDate.get(hoveredDate) ?? null : null
 
   const toggleSelect = (day: GridDay) => {
     if (day.commits === 0 && day.lines === 0 && day.tokens === 0) {
@@ -308,72 +298,6 @@ function ActivityGrid({
           )
         })}
       </div>
-
-      {hoveredDay && !selectedDay && hoveredDay.projects.length > 0 && (
-        <div style={{
-          marginTop: 8,
-          borderTop: '1px solid rgba(255,255,255,0.06)',
-          paddingTop: 6
-        }}>
-          <div style={{
-            fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.05em',
-            color: 'var(--color-muted-foreground)', marginBottom: 4
-          }}>
-            {hoveredDay === todayDay ? 'Today' : fmtDate(hoveredDay.date)} · Projects
-          </div>
-          <div style={{ maxHeight: 72, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3 }} className="show-scrollbar">
-            {hoveredDay.projects.map(p => (
-              <div key={p.cwd} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{
-                  fontSize: 11, color: 'var(--color-foreground)', fontWeight: 500,
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-                }} title={p.name}>
-                  {p.name}
-                </span>
-                <span style={{ fontSize: 10, color: 'var(--color-muted-foreground)', flexShrink: 0 }}>
-                  {p.commits}c · {fmt(p.lines)} lines
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {selectedDay && (
-        <div style={{
-          marginTop: 8,
-          borderTop: '1px solid rgba(255,255,255,0.06)',
-          paddingTop: 6
-        }}>
-          <div style={{
-            fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.05em',
-            color: 'var(--color-muted-foreground)', marginBottom: 4
-          }}>
-            {selectedDay === todayDay ? 'Today' : fmtDate(selectedDay.date)} · Projects
-          </div>
-          {selectedDay.projects.length > 0 ? (
-            <div style={{ maxHeight: 96, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3 }} className="show-scrollbar">
-              {selectedDay.projects.map(p => (
-                <div key={p.cwd} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                  <span style={{
-                    fontSize: 11, color: 'var(--color-foreground)', fontWeight: 500,
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-                  }} title={p.name}>
-                    {p.name}
-                  </span>
-                  <span style={{ fontSize: 10, color: 'var(--color-muted-foreground)', flexShrink: 0 }}>
-                    {p.commits}c · {fmt(p.lines)} lines
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ fontSize: 10, color: 'var(--color-muted-foreground)', opacity: 0.6 }}>
-              No projects recorded
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }
