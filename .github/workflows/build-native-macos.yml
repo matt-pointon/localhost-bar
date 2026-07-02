@@ -1,19 +1,10 @@
 name: Build Native macOS App
 
-# Manual runs: Actions → Build Native macOS App → Run workflow
+# Runs on every merge to main (merged PRs push to main) and manual dispatch.
 on:
   push:
     branches:
       - main
-      - 'cursor/*'
-    paths:
-      - 'LocalhostBarNative/**'
-      - '.github/workflows/build-native-macos.yml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'LocalhostBarNative/**'
   workflow_dispatch:
 
 permissions:
