@@ -24,7 +24,7 @@ export function DayProjectList({ day, search }: DayProjectListProps) {
       : 'No project activity on this day'
     return (
       <div style={{
-        padding: '24px 16px', textAlign: 'center',
+        padding: '8px 16px',
         fontSize: 11, color: 'var(--color-muted-foreground)'
       }}>
         {msg}
@@ -33,7 +33,7 @@ export function DayProjectList({ day, search }: DayProjectListProps) {
   }
 
   return (
-    <div style={{ padding: '6px 0' }}>
+    <div style={{ padding: '4px 0' }}>
       {projects.map(project => (
         <ProjectRow key={project.cwd} project={project} />
       ))}
@@ -46,34 +46,34 @@ function ProjectRow({ project }: { project: DayProject }) {
 
   return (
     <div
-      className="row-enter"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={() => window.electronAPI.openFolder(project.cwd)}
       style={{
-        padding: '7px 12px',
+        position: 'relative',
+        padding: '8px 12px',
         display: 'flex',
         alignItems: 'center',
-        gap: 8,
+        gap: 9,
         cursor: 'pointer',
-        background: hovered ? 'rgba(255,255,255,0.04)' : 'transparent',
-        transition: 'background 100ms',
-        borderRadius: 6,
-        margin: '0 4px'
+        background: hovered ? 'var(--color-hover-overlay)' : 'transparent',
+        transition: 'background 120ms ease',
+        borderRadius: 8,
+        margin: '0 6px'
       }}
     >
       <GitCommit size={12} style={{ color: 'var(--color-status-running)', flexShrink: 0 }} />
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          fontSize: 12, fontWeight: 600, color: 'var(--color-foreground)',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3
+          fontSize: 12.5, fontWeight: 600, color: 'var(--color-foreground)',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.35
         }}>
           {project.name}
         </div>
         <div style={{
-          fontSize: 9, color: 'var(--color-muted-foreground)', lineHeight: 1.2,
-          display: 'flex', gap: 5, alignItems: 'center', marginTop: 1
+          fontSize: 10, color: 'var(--color-muted-foreground)', lineHeight: 1.4,
+          display: 'flex', gap: 6, alignItems: 'center', marginTop: 2
         }}>
           <span>{project.commits} commit{project.commits !== 1 ? 's' : ''}</span>
           {project.lines > 0 && (
@@ -85,8 +85,37 @@ function ProjectRow({ project }: { project: DayProject }) {
         </div>
       </div>
 
-      <div style={{ opacity: hovered ? 1 : 0, transition: 'opacity 100ms', color: 'var(--color-muted-foreground)', display: 'flex' }}>
-        <Folder size={12} />
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          right: 8,
+          display: 'flex',
+          alignItems: 'center',
+          paddingLeft: 24,
+          opacity: hovered ? 1 : 0,
+          pointerEvents: hovered ? 'auto' : 'none',
+          transition: 'opacity 120ms ease',
+          background: 'linear-gradient(to right, rgba(15,19,16,0) 0%, rgb(15,19,16) 28px)',
+          borderRadius: 8,
+          color: 'var(--color-muted-foreground)'
+        }}
+      >
+        <button
+          onClick={() => window.electronAPI.openFolder(project.cwd)}
+          title="Open folder"
+          className="no-drag"
+          style={{
+            padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
+            cursor: 'pointer', color: 'inherit', display: 'flex', alignItems: 'center'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-hover-overlay)'; e.currentTarget.style.color = 'var(--color-foreground)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-muted-foreground)' }}
+        >
+          <Folder size={13} />
+        </button>
       </div>
     </div>
   )
