@@ -2,7 +2,7 @@ import { execSync } from 'child_process'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { updateStreak, getHistory } from './streak'
-import type { DayActivity } from './streak'
+import type { DayActivity, ProjectActivity } from './streak'
 
 export interface DailyStats {
   commitsToday: number
@@ -10,6 +10,11 @@ export interface DailyStats {
   activeProjects: number
   streakDays: number
   history: DayActivity[]
+}
+
+export interface ProjectRef {
+  cwd: string
+  name: string
 }
 
 interface ProjectStats {
@@ -54,28 +59,35 @@ function getProjectStats(cwd: string): ProjectStats {
   return data
 }
 
-export function getDailyStats(cwds: string[]): DailyStats {
-  const uniqueCwds = [...new Set(cwds)].filter(
-    cwd => existsSync(join(cwd, '.git'))
-  )
+export function getDailyStats(projects: ProjectRef[]): DailyStats {
+  const seen = new Set<string>()
+  const uniqueProjects = projects.filter(p => {
+    if (seen.has(p.cwd)) return false
+    seen.add(p.cwd)
+    return existsSync(join(p.cwd, '.git'))
+  })
 
   let commitsToday = 0
   let linesChangedToday = 0
+  const projectActivity: ProjectActivity[] = []
 
-  for (const cwd of uniqueCwds) {
+  for (const { cwd, name } of uniqueProjects) {
     const stats = getProjectStats(cwd)
     commitsToday += stats.commits
     linesChangedToday += stats.lines
+    if (stats.commits > 0) {
+      projectActivity.push({ name, cwd, commits: stats.commits, lines: stats.lines })
+    }
   }
 
   const hasActivity = commitsToday > 0
-  const streakDays = updateStreak(hasActivity, commitsToday, linesChangedToday)
+  const streakDays = updateStreak(hasActivity, commitsToday, linesChangedToday, projectActivity)
   const history = getHistory()
 
   return {
     commitsToday,
     linesChangedToday,
-    activeProjects: uniqueCwds.length,
+    activeProjects: uniqueProjects.length,
     streakDays,
     history
   }
