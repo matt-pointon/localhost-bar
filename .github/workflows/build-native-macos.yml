@@ -1,5 +1,6 @@
 name: Build Native macOS App
 
+# Manual runs: Actions → Build Native macOS App → Run workflow
 on:
   push:
     branches:
