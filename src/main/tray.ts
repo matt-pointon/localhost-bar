@@ -1,23 +1,25 @@
-import { Tray, BrowserWindow, nativeImage, screen, app } from 'electron'
+import { Tray, BrowserWindow, nativeImage, screen } from 'electron'
 import { join } from 'path'
 import { existsSync, readFileSync } from 'fs'
 
 let trayInstance: Tray | null = null
 
-export function createTray(panel: BrowserWindow): Tray {
-  // In dev mode, __dirname is out/main, so ../../build/icon.png works
-  // In production, we need to use resources path
-  const isDev = !app.isPackaged
-  
-  let iconDir: string
-  if (isDev) {
-    // Development: icons are in build/ relative to project root
-    iconDir = join(__dirname, '../../build')
-  } else {
-    // Production: icons should be in resources
-    iconDir = process.resourcesPath
+function resolveTrayIconDir(): string {
+  const candidates = [
+    join(__dirname, 'tray-icons'), // bundled with main process in production
+    join(__dirname, '../../build'), // dev fallback (electron-vite serves from out/main)
+    process.resourcesPath // extraResources fallback
+  ]
+
+  for (const dir of candidates) {
+    if (existsSync(join(dir, 'icon.png'))) return dir
   }
-  
+
+  return candidates[0]
+}
+
+export function createTray(panel: BrowserWindow): Tray {
+  const iconDir = resolveTrayIconDir()
   const iconPath1x = join(iconDir, 'icon.png')
   const iconPath2x = join(iconDir, 'icon@2x.png')
   
@@ -42,7 +44,10 @@ export function createTray(panel: BrowserWindow): Tray {
     console.error('[Tray] Failed to load icon from', iconDir)
   }
   
-  icon.setTemplateImage(true) // Auto-inverts for dark/light menu bar
+  // macOS template images auto-invert for dark/light menu bar backgrounds
+  if (process.platform === 'darwin') {
+    icon.setTemplateImage(true)
+  }
 
   trayInstance = new Tray(icon)
   trayInstance.setToolTip('Localhost Bar')

@@ -53,6 +53,16 @@
     },
     "files": [
       "out/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
+      },
+      {
+        "from": "build/icon@2x.png",
+        "to": "icon@2x.png"
+      }
     ]
   }
 }
