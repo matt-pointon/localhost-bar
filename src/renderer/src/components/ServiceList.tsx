@@ -3,6 +3,7 @@ import { ExternalLink, Folder, Square, Copy, Check, Pin, Pencil } from 'lucide-r
 import { QuickActionsMenu } from './QuickActionsMenu'
 import { ToolIconRow } from './ToolIcons'
 import { TaskList } from './TaskList'
+import { IconButton } from './IconButton'
 import { useTasks } from '../hooks/useTasks'
 import type { ServiceInfo } from '../hooks/useServices'
 import type { DetectedTool } from './QuickActionsMenu'
@@ -36,7 +37,7 @@ export function ServiceList({
   }, [services, search])
 
   return (
-    <div style={{ padding: '6px 0' }}>
+    <div style={{ padding: '4px 0' }}>
       {filtered.map(service => (
         <ServiceRow
           key={`${service.pid}-${service.port}`}
@@ -103,29 +104,33 @@ function ServiceRow({
         onMouseLeave={() => setHovered(false)}
         onClick={() => !isStopping && !renaming && onOpen(service.port)}
         style={{
-          padding: '7px 12px',
+          position: 'relative',
+          padding: '8px 12px',
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
+          gap: 9,
           cursor: isStopping ? 'not-allowed' : 'pointer',
-          background: hovered ? 'rgba(255,255,255,0.04)' : 'transparent',
-          transition: 'background 100ms',
+          background: hovered ? 'var(--color-hover-overlay)' : 'transparent',
+          transition: 'background 120ms ease',
           opacity: isStopping ? 0.4 : 1,
-          borderRadius: 6,
-          margin: '0 4px'
+          borderRadius: 8,
+          margin: '0 6px'
         }}
       >
         <span
           className={isStopping ? 'animate-pulse' : ''}
           style={{
-            width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-            background: isStopping ? 'var(--color-status-stopping)' : 'var(--color-status-running)'
+            width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+            background: isStopping ? 'var(--color-status-stopping)' : 'var(--color-status-running)',
+            boxShadow: isStopping ? 'none' : '0 0 6px -1px var(--color-status-running)'
           }}
         />
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
-            {service.pinned && <Pin size={9} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+            {service.pinned && !renaming && (
+              <Pin size={9} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
+            )}
             {renaming ? (
               <input
                 className="no-drag"
@@ -139,15 +144,16 @@ function ServiceRow({
                 onClick={e => e.stopPropagation()}
                 autoFocus
                 style={{
-                  fontSize: 12, fontWeight: 600, flex: 1, minWidth: 0,
+                  fontSize: 12.5, fontWeight: 600, flex: 1, minWidth: 0,
                   background: 'var(--color-input-bg)', border: '1px solid var(--color-border)',
-                  borderRadius: 4, padding: '1px 4px', color: 'var(--color-foreground)', outline: 'none'
+                  borderRadius: 5, padding: '1px 5px', color: 'var(--color-foreground)', outline: 'none'
                 }}
               />
             ) : (
               <div style={{
-                fontSize: 12, fontWeight: 600, color: 'var(--color-foreground)',
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3, flex: 1
+                fontSize: 12.5, fontWeight: 600, color: 'var(--color-foreground)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                lineHeight: 1.35, letterSpacing: '-0.01em', flexShrink: 1, minWidth: 0
               }}>
                 {service.name}
               </div>
@@ -156,74 +162,107 @@ function ServiceRow({
           </div>
 
           <div style={{
-            fontSize: 9, color: 'var(--color-muted-foreground)', lineHeight: 1.2,
-            display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap', marginTop: 1
+            fontSize: 10, color: 'var(--color-muted-foreground)', lineHeight: 1.4,
+            display: 'flex', gap: 6, alignItems: 'center', marginTop: 2,
+            whiteSpace: 'nowrap', overflow: 'hidden'
           }}>
-            <span style={{ fontFamily: 'monospace' }}>:{service.port}</span>
+            <span style={{ fontFamily: 'ui-monospace, monospace', flexShrink: 0, opacity: 0.85 }}>
+              :{service.port}
+            </span>
             {service.git && (
               <>
-                <span style={{ opacity: 0.3 }}>·</span>
-                <span>{service.git.branch}</span>
+                <MetaDot />
+                <span style={{
+                  overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flexShrink: 1
+                }}>
+                  {service.git.branch}
+                </span>
                 {service.git.changes > 0 && (
-                  <span style={{ color: 'var(--color-warning)' }}>{service.git.changes}Δ</span>
+                  <span style={{ color: 'var(--color-warning)', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+                    {service.git.changes}Δ
+                  </span>
                 )}
               </>
             )}
             {service.resources && (
               <>
-                <span style={{ opacity: 0.3 }}>·</span>
-                <span>{service.resources.mem}MB</span>
+                <MetaDot />
+                <span style={{ flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+                  {service.resources.mem}MB
+                </span>
               </>
             )}
-            {service.stackTags.map(tag => (
-              <span key={tag} style={{
-                fontSize: 8, padding: '0 4px', borderRadius: 3,
-                background: 'rgba(255,255,255,0.06)', color: 'var(--color-muted-foreground)'
-              }}>
-                {tag}
+            {service.stackTags.length > 0 && (
+              <span style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 1 }}>
+                {service.stackTags.map(tag => (
+                  <span key={tag} style={{
+                    fontSize: 9, lineHeight: 1.5, padding: '0 5px', borderRadius: 4,
+                    background: 'var(--color-muted)', border: '1px solid var(--color-border)',
+                    color: 'var(--color-muted-foreground)', fontWeight: 500
+                  }}>
+                    {tag}
+                  </span>
+                ))}
               </span>
-            ))}
+            )}
           </div>
         </div>
 
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 1,
-          opacity: hovered ? 1 : 0, transition: 'opacity 100ms'
-        }}>
-          <RowBtn title={copied ? 'Copied!' : 'Copy URL'} onClick={copyUrl}>
-            {copied ? <Check size={12} style={{ color: 'var(--color-success)' }} /> : <Copy size={12} />}
-          </RowBtn>
+        {/* Hover action cluster — absolute overlay so it never reserves width
+            nor overlaps the title/meta text underneath */}
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            right: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            paddingLeft: 34,
+            opacity: hovered && !renaming ? 1 : 0,
+            pointerEvents: hovered && !renaming ? 'auto' : 'none',
+            transition: 'opacity 120ms ease',
+            background: 'linear-gradient(to right, rgba(15,19,16,0) 0%, rgb(15,19,16) 38px)',
+            borderRadius: 8
+          }}
+        >
+          <IconButton title={copied ? 'Copied!' : 'Copy URL'} onClick={copyUrl}>
+            {copied ? <Check size={13} style={{ color: 'var(--color-success)' }} /> : <Copy size={13} />}
+          </IconButton>
           {service.cwd && (
-            <RowBtn title="Rename" onClick={e => { e.stopPropagation(); setRenaming(true); setRenameVal(service.name) }}>
-              <Pencil size={12} />
-            </RowBtn>
+            <IconButton title="Rename" onClick={e => { e.stopPropagation(); setRenaming(true); setRenameVal(service.name) }}>
+              <Pencil size={13} />
+            </IconButton>
           )}
           {service.cwd && (
-            <RowBtn title={service.pinned ? 'Unpin' : 'Pin'} onClick={handlePin}>
-              <Pin size={12} style={service.pinned ? { color: 'var(--color-warning)' } : undefined} />
-            </RowBtn>
+            <IconButton title={service.pinned ? 'Unpin' : 'Pin'} onClick={handlePin} active={service.pinned}>
+              <Pin size={13} />
+            </IconButton>
           )}
           {service.cwd && (
-          <QuickActionsMenu
-            cwd={service.cwd}
-            tools={availableTools}
-            git={service.git}
-            deployState={deployState}
-            onDeploy={onDeploy}
-            onSetLastDeploy={onSetLastDeploy}
-          />
+            <QuickActionsMenu
+              cwd={service.cwd}
+              tools={availableTools}
+              git={service.git}
+              deployState={deployState}
+              onDeploy={onDeploy}
+              onSetLastDeploy={onSetLastDeploy}
+            />
           )}
           {service.cwd && (
-            <RowBtn title="Finder" onClick={() => window.electronAPI.openFolder(service.cwd!)}>
-              <Folder size={12} />
-            </RowBtn>
+            <IconButton title="Finder" onClick={() => window.electronAPI.openFolder(service.cwd!)}>
+              <Folder size={13} />
+            </IconButton>
           )}
-          <RowBtn title="Open" onClick={() => onOpen(service.port)}>
-            <ExternalLink size={12} />
-          </RowBtn>
-          <RowBtn title="Stop" onClick={() => onKill(service.pid)} disabled={isStopping} hoverColor="var(--color-destructive)">
-            <Square size={12} />
-          </RowBtn>
+          <IconButton title="Open" onClick={() => onOpen(service.port)}>
+            <ExternalLink size={13} />
+          </IconButton>
+          <span style={{ width: 1, height: 16, background: 'var(--color-border)', margin: '0 2px', flexShrink: 0 }} />
+          <IconButton title="Stop" onClick={() => onKill(service.pid)} disabled={isStopping} variant="destructive">
+            <Square size={13} />
+          </IconButton>
         </div>
       </div>
 
@@ -240,30 +279,6 @@ function ServiceRow({
   )
 }
 
-function RowBtn({ title, onClick, disabled, hoverColor, children }: {
-  title: string; onClick: (e: React.MouseEvent) => void; disabled?: boolean; hoverColor?: string; children: React.ReactNode
-}) {
-  return (
-    <button
-      title={title}
-      disabled={disabled}
-      onClick={e => { e.stopPropagation(); onClick(e) }}
-      style={{
-        padding: 4, borderRadius: 5, border: 'none', background: 'transparent',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        color: 'var(--color-muted-foreground)',
-        display: 'flex', alignItems: 'center', transition: 'all 100ms'
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.color = hoverColor ?? 'var(--color-foreground)'
-        e.currentTarget.style.background = 'var(--color-hover-overlay)'
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.color = 'var(--color-muted-foreground)'
-        e.currentTarget.style.background = 'transparent'
-      }}
-    >
-      {children}
-    </button>
-  )
+function MetaDot() {
+  return <span style={{ opacity: 0.35, flexShrink: 0 }}>·</span>
 }

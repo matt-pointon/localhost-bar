@@ -63,7 +63,7 @@ export function ToolIconRow({ originTools, activeAgents }: ToolIconRowProps) {
   if (all.length === 0) return null
 
   return (
-    <span style={{ display: 'flex', gap: 3, alignItems: 'center', flexWrap: 'wrap' }}>
+    <span style={{ display: 'flex', gap: 3, alignItems: 'center', flexShrink: 0 }}>
       {all.map(id => (
         <ToolBadge key={id} toolId={id} active={activeAgents.includes(id)} />
       ))}

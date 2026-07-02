@@ -33,16 +33,17 @@ const menuItemStyle: React.CSSProperties = {
   alignItems: 'center',
   gap: 8,
   width: '100%',
-  padding: '5px 10px',
+  padding: '6px 10px',
   fontSize: 12,
   fontWeight: 500,
   textAlign: 'left',
   background: 'transparent',
   border: 'none',
   cursor: 'pointer',
-  borderRadius: 5,
+  borderRadius: 6,
   color: 'var(--color-foreground)',
-  whiteSpace: 'nowrap'
+  whiteSpace: 'nowrap',
+  transition: 'background 120ms ease'
 }
 
 const DEPLOY_LABELS: Record<DeployTarget, string> = {
@@ -262,18 +263,26 @@ export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSet
         ref={btnRef}
         title="Quick actions"
         onClick={toggle}
-        className="no-drag p-1 rounded transition-colors"
-        style={{ color: 'var(--color-muted-foreground)' }}
+        className="no-drag"
+        style={{
+          width: 24, height: 24, padding: 0, border: 'none', borderRadius: 6,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          cursor: 'pointer',
+          background: open ? 'var(--color-hover-overlay)' : 'transparent',
+          color: open ? 'var(--color-foreground)' : 'var(--color-muted-foreground)',
+          transition: 'color 120ms ease, background 120ms ease'
+        }}
         onMouseEnter={e => {
           ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-foreground)'
           ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--color-hover-overlay)'
         }}
         onMouseLeave={e => {
+          if (open) return
           ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-muted-foreground)'
           ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
         }}
       >
-        <MoreHorizontal size={12} />
+        <MoreHorizontal size={13} />
       </button>
 
       {open &&
@@ -338,7 +347,7 @@ export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSet
             )}
 
             {/* Separator before deploy */}
-            <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 6px' }} />
+            <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 8px' }} />
 
             {/* Deploy button */}
             {!anyCliInstalled ? (
@@ -419,7 +428,7 @@ export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSet
             {/* Git actions */}
             {hasGit && (
               <>
-                <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 6px' }} />
+                <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 8px' }} />
 
                 {/* Commit */}
                 {hasChanges && !showCommitInput && (
@@ -533,7 +542,7 @@ export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSet
                 {/* Git error message */}
                 {gitError && (
                   <div style={{
-                    padding: '3px 10px',
+                    padding: '4px 10px',
                     fontSize: 10,
                     color: 'var(--color-destructive)',
                     overflow: 'hidden',

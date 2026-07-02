@@ -5,6 +5,7 @@ import { useStats } from './hooks/useStats'
 import { useTokenStats } from './hooks/useTokenStats'
 import { StatsBar } from './components/StatsBar'
 import { ServiceList } from './components/ServiceList'
+import { DayProjectList } from './components/DayProjectList'
 import { EmptyState } from './components/EmptyState'
 import { OfflineRow } from './components/OfflineRow'
 import { GradientBackground } from './components/GradientBackground'
@@ -17,6 +18,7 @@ export default function App() {
   const [availableTools, setAvailableTools] = useState<DetectedTool[]>([])
   const [search, setSearch] = useState('')
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
+  const [hoveredDay, setHoveredDay] = useState<DayActivity | null>(null)
   const { states: deployStates, deploy, setLastDeploy } = useDeployState()
 
   useEffect(() => {
@@ -36,11 +38,14 @@ export default function App() {
     dismissOffline
   } = useServices()
 
-  const cwds = useMemo(
-    () => services.map(s => s.cwd).filter((c): c is string => c !== null),
+  const projects = useMemo(
+    () =>
+      services
+        .filter(s => s.cwd !== null)
+        .map(s => ({ cwd: s.cwd as string, name: s.name })),
     [services]
   )
-  const stats = useStats(cwds)
+  const stats = useStats(projects)
   const tokenStats = useTokenStats()
 
   const hasRunning = services.length > 0
@@ -65,13 +70,13 @@ export default function App() {
     >
       <GradientBackground />
 
-      <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 20, display: 'flex', gap: 2 }}>
+      <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 20, display: 'flex', gap: 2 }}>
         <button
           className="no-drag"
           onClick={toggleNotifications}
           title={notificationsEnabled ? 'Notifications on' : 'Notifications off'}
           style={{
-            padding: 4, borderRadius: 5, border: 'none', background: 'transparent',
+            padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
             cursor: 'pointer', color: 'var(--color-muted-foreground)', display: 'flex'
           }}
         >
@@ -82,7 +87,7 @@ export default function App() {
           onClick={() => window.electronAPI.quit()}
           title="Quit"
           style={{
-            padding: 4, borderRadius: 5, border: 'none', background: 'transparent',
+            padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
             cursor: 'pointer', color: 'var(--color-muted-foreground)', display: 'flex'
           }}
         >
@@ -109,6 +114,7 @@ export default function App() {
             serviceCount={services.length}
             isLoading={isLoading}
             onRefresh={refresh}
+            onHoverDay={setHoveredDay}
           />
         </div>
 
@@ -116,7 +122,7 @@ export default function App() {
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100%' }}>
           <div className="drag-region" style={{
-            padding: '10px 14px 4px',
+            padding: '12px 16px 4px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between'
@@ -125,7 +131,9 @@ export default function App() {
               fontSize: 10, fontWeight: 500, textTransform: 'uppercase',
               letterSpacing: '0.05em', color: 'var(--color-muted-foreground)'
             }}>
-              {services.length} Project{services.length !== 1 ? 's' : ''} Running
+              {hoveredDay
+                ? `${hoveredDay.projects.length} Project${hoveredDay.projects.length !== 1 ? 's' : ''} · ${formatDayLabel(hoveredDay.date)}`
+                : `${services.length} Project${services.length !== 1 ? 's' : ''} Running`}
             </span>
           </div>
 
@@ -133,7 +141,9 @@ export default function App() {
           <PortConflictBanner conflicts={portConflicts} />
 
           <div className="flex-1 overflow-y-auto show-scrollbar">
-            {!hasRunning && !hasOffline && !isLoading ? (
+            {hoveredDay ? (
+              <DayProjectList day={hoveredDay} search={search} />
+            ) : !hasRunning && !hasOffline && !isLoading ? (
               <EmptyState />
             ) : (
               <div>
@@ -154,14 +164,14 @@ export default function App() {
                 {hasOffline && (
                   <>
                     <div style={{
-                      padding: '12px 14px 6px',
+                      padding: '12px 16px 4px',
                       borderTop: hasRunning ? '1px solid rgba(255,255,255,0.04)' : 'none'
                     }}>
                       <span style={{ fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-muted-foreground)' }}>
                         Offline
                       </span>
                     </div>
-                    <div style={{ padding: '0 8px 8px' }}>
+                    <div style={{ padding: '0 0 8px' }}>
                       {offlineServices.map(service => (
                         <OfflineRow
                           key={service.port}
@@ -180,4 +190,11 @@ export default function App() {
       </div>
     </div>
   )
+}
+
+function formatDayLabel(dateStr: string): string {
+  const todayStr = new Date().toISOString().slice(0, 10)
+  if (dateStr === todayStr) return 'Today'
+  const d = new Date(dateStr + 'T00:00:00')
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }

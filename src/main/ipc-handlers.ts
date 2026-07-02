@@ -10,6 +10,7 @@ import type { DeployTarget } from './deploy'
 import { getGitStatus } from './port-scanner/git-status'
 import { gitCommit, gitPull, gitCreatePR, isGhInstalled, getDefaultBranch } from './git-actions'
 import { getDailyStats } from './stats/collector'
+import type { ProjectRef } from './stats/collector'
 import { getTokenStats } from './token-stats'
 import { getSettings, setSettings, togglePin, setRename } from './settings'
 import { setNotificationsEnabled } from './notifications'
@@ -193,8 +194,8 @@ export function registerIpcHandlers(): void {
     }
   })
 
-  ipcMain.handle('stats:get-daily', (_event, cwds: string[]) => {
-    return getDailyStats(cwds)
+  ipcMain.handle('stats:get-daily', (_event, projects: ProjectRef[]) => {
+    return getDailyStats(projects)
   })
 
   ipcMain.handle('stats:get-tokens', () => {
