@@ -19,6 +19,8 @@ interface StatsBarProps {
 export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh, onHoverDay }: StatsBarProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [shared, setShared] = useState(false)
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   const handleShare = useCallback(async () => {
     if (!containerRef.current) return
@@ -34,6 +36,22 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
   const linesChangedToday = stats?.linesChangedToday ?? 0
   const streakDays = stats?.streakDays ?? 0
   const history = stats?.history ?? []
+  const todayStr = new Date().toISOString().slice(0, 10)
+
+  const activityMap = new Map<string, DayActivity>()
+  for (const day of history) {
+    activityMap.set(day.date, day)
+  }
+
+  const displayDate = hoveredDate ?? selectedDate ?? todayStr
+  const displayDay = activityMap.get(displayDate) ?? {
+    date: displayDate,
+    commits: displayDate === todayStr ? commitsToday : 0,
+    lines: displayDate === todayStr ? linesChangedToday : 0,
+    tokens: displayDate === todayStr ? (stats?.tokensToday ?? 0) : 0,
+    projects: [] as DayProject[]
+  }
+  const isViewingToday = displayDate === todayStr && !hoveredDate && !selectedDate
 
   const aiItems: { value: string; label: string }[] = []
   if (tokenStats?.claudeDesktop) {
@@ -63,28 +81,52 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
         </HeaderBtn>
       </div>
 
-      <div style={{ display: 'flex', gap: 20, marginBottom: 16 }}>
-        {linesChangedToday > 0 && (
-          <StatNumber value={fmt(linesChangedToday)} label={linesChangedToday === 1 ? 'Line' : 'Lines'} />
+      <div style={{ marginBottom: 16 }}>
+        {!isViewingToday && (
+          <div style={{
+            fontSize: 10, fontWeight: 600, color: 'var(--color-foreground)',
+            marginBottom: 8, letterSpacing: '0.01em'
+          }}>
+            {fmtDisplayDate(displayDate)}
+          </div>
         )}
-        {commitsToday > 0 && (
-          <StatNumber value={fmt(commitsToday)} label={commitsToday === 1 ? 'Commit' : 'Commits'} />
-        )}
-        {streakDays > 0 && (
-          <StatNumber value={`${streakDays}d`} label="Streak" />
-        )}
-        {aiItems.map((item, i) => (
-          <StatNumber key={i} value={item.value} label={item.label} color="var(--color-status-ai)" />
-        ))}
-        {aiPercent > 0 && (
-          <StatNumber value={`${aiPercent}%`} label="AI Code" color="var(--color-status-ai)" />
-        )}
-        {!isLoading && commitsToday === 0 && linesChangedToday === 0 && streakDays === 0 && aiItems.length === 0 && (
-          <StatNumber value="—" label="Today" />
-        )}
+        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-end' }}>
+          {displayDay.lines > 0 && (
+            <StatNumber value={fmt(displayDay.lines)} label={displayDay.lines === 1 ? 'Line' : 'Lines'} />
+          )}
+          {displayDay.commits > 0 && (
+            <StatNumber value={fmt(displayDay.commits)} label={displayDay.commits === 1 ? 'Commit' : 'Commits'} />
+          )}
+          {isViewingToday && streakDays > 0 && (
+            <StatNumber value={`${streakDays}d`} label="Streak" />
+          )}
+          {isViewingToday && aiItems.map((item, i) => (
+            <StatNumber key={i} value={item.value} label={item.label} color="var(--color-status-ai)" />
+          ))}
+          {isViewingToday && aiPercent > 0 && (
+            <StatNumber value={`${aiPercent}%`} label="AI Code" color="var(--color-status-ai)" />
+          )}
+          {!isViewingToday && displayDay.tokens > 0 && (
+            <StatNumber value={fmt(displayDay.tokens)} label="Tokens" color="var(--color-status-ai)" />
+          )}
+          {!isLoading && displayDay.commits === 0 && displayDay.lines === 0 && displayDay.tokens === 0 && (
+            <StatNumber value="—" label={isViewingToday ? 'Today' : 'No activity'} />
+          )}
+        </div>
       </div>
 
-      <ActivityGrid history={history} onHoverDay={onHoverDay} />
+      <ActivityGrid
+        history={history}
+        hoveredDate={hoveredDate}
+        selectedDate={selectedDate}
+        onHoverDate={(date) => {
+          setHoveredDate(date)
+          if (!onHoverDay) return
+          if (date === null) { onHoverDay(null); return }
+          onHoverDay(activityMap.get(date) ?? { date, commits: 0, lines: 0, tokens: 0, projects: [] })
+        }}
+        onSelectDate={setSelectedDate}
+      />
     </div>
   )
 }
@@ -141,19 +183,30 @@ interface GridDay {
   projects: DayProject[]
 }
 
-function ActivityGrid({ history, onHoverDay }: { history: DayActivity[]; onHoverDay?: (day: DayActivity | null) => void }) {
-  const [hoveredDate, setHoveredDate] = useState<string | null>(null)
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+function fmtDisplayDate(dateStr: string): string {
+  const todayStr = new Date().toISOString().slice(0, 10)
+  if (dateStr === todayStr) return 'Today'
+  const d = new Date(dateStr + 'T00:00:00')
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+function ActivityGrid({
+  history,
+  hoveredDate,
+  selectedDate,
+  onHoverDate,
+  onSelectDate
+}: {
+  history: DayActivity[]
+  hoveredDate: string | null
+  selectedDate: string | null
+  onHoverDate: (date: string | null) => void
+  onSelectDate: (date: string | null) => void
+}) {
 
   const activityMap = new Map<string, DayActivity>()
   for (const day of history) {
     activityMap.set(day.date, day)
-  }
-
-  const emitHover = (date: string | null) => {
-    if (!onHoverDay) return
-    if (date === null) { onHoverDay(null); return }
-    onHoverDay(activityMap.get(date) ?? { date, commits: 0, lines: 0, tokens: 0, projects: [] })
   }
 
   // Each metric is normalized against its own max in the window, so no single
@@ -211,15 +264,13 @@ function ActivityGrid({ history, onHoverDay }: { history: DayActivity[]; onHover
   const byDate = new Map(days.map(d => [d.date, d]))
   const todayDay = days[days.length - 1]
   const selectedDay = selectedDate ? byDate.get(selectedDate) ?? null : null
-  const hoveredDay = hoveredDate ? byDate.get(hoveredDate) ?? null : null
-  const summaryDay = hoveredDay ?? selectedDay ?? todayDay
 
   const toggleSelect = (day: GridDay) => {
     if (day.commits === 0 && day.lines === 0 && day.tokens === 0) {
-      setSelectedDate(null)
+      onSelectDate(null)
       return
     }
-    setSelectedDate(prev => (prev === day.date ? null : day.date))
+    onSelectDate(selectedDate === day.date ? null : day.date)
   }
 
   return (
@@ -235,8 +286,8 @@ function ActivityGrid({ history, onHoverDay }: { history: DayActivity[]; onHover
           return (
             <div
               key={day.date}
-              onMouseEnter={() => { setHoveredDate(day.date); emitHover(day.date) }}
-              onMouseLeave={() => { setHoveredDate(null); emitHover(null) }}
+              onMouseEnter={() => onHoverDate(day.date)}
+              onMouseLeave={() => onHoverDate(null)}
               onClick={() => toggleSelect(day)}
               style={{
                 aspectRatio: '1',
@@ -250,38 +301,6 @@ function ActivityGrid({ history, onHoverDay }: { history: DayActivity[]; onHover
           )
         })}
       </div>
-
-      {summaryDay && (
-        <div style={{
-          marginTop: 6, fontSize: 10, color: 'var(--color-muted-foreground)',
-          display: 'flex', alignItems: 'center', gap: 8
-        }}>
-          <span style={{ color: 'var(--color-foreground)', fontWeight: 600 }}>
-            {summaryDay === todayDay && !hoveredDay && !selectedDay ? 'Today' : fmtDate(summaryDay.date)}
-          </span>
-          {summaryDay.commits > 0 || summaryDay.lines > 0 || summaryDay.tokens > 0 ? (
-            <>
-              {summaryDay.commits > 0 && (
-                <span>{summaryDay.commits} commit{summaryDay.commits !== 1 ? 's' : ''}</span>
-              )}
-              {summaryDay.lines > 0 && (
-                <>
-                  {summaryDay.commits > 0 && <span style={{ opacity: 0.4 }}>·</span>}
-                  <span>{fmt(summaryDay.lines)} lines</span>
-                </>
-              )}
-              {summaryDay.tokens > 0 && (
-                <>
-                  {(summaryDay.commits > 0 || summaryDay.lines > 0) && <span style={{ opacity: 0.4 }}>·</span>}
-                  <span>{fmt(summaryDay.tokens)} tokens</span>
-                </>
-              )}
-            </>
-          ) : (
-            <span style={{ opacity: 0.5 }}>No activity</span>
-          )}
-        </div>
-      )}
 
       {selectedDay && (
         <div style={{
