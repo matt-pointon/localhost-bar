@@ -7,6 +7,11 @@ import { getTokenStats } from '../token-stats'
 import { inferNameFromCwd } from '../port-scanner/name-inferrer'
 import { getDisplayName } from '../settings'
 
+export interface ProjectRef {
+  cwd: string
+  name: string
+}
+
 export interface DailyStats {
   commitsToday: number
   linesChangedToday: number
@@ -65,8 +70,8 @@ function getRepoDaily(cwd: string): RepoDaily {
   return data
 }
 
-function projectName(cwd: string): string {
-  return getDisplayName(cwd, inferNameFromCwd(cwd))
+function projectName(cwd: string, runningNames: Map<string, string>): string {
+  return runningNames.get(cwd) ?? getDisplayName(cwd, inferNameFromCwd(cwd))
 }
 
 function getTokensToday(): number {
@@ -77,8 +82,16 @@ function getTokensToday(): number {
   }
 }
 
-export function getDailyStats(cwds: string[]): DailyStats {
-  const runningCwds = [...new Set(cwds)].filter(cwd => existsSync(join(cwd, '.git')))
+export function getDailyStats(projects: ProjectRef[]): DailyStats {
+  const seen = new Set<string>()
+  const uniqueProjects = projects.filter(p => {
+    if (seen.has(p.cwd)) return false
+    seen.add(p.cwd)
+    return existsSync(join(p.cwd, '.git'))
+  })
+
+  const runningCwds = uniqueProjects.map(p => p.cwd)
+  const runningNames = new Map(uniqueProjects.map(p => [p.cwd, p.name]))
 
   // Universe of repos to attribute activity to: currently running plus any repo
   // ever seen running (so days when a project wasn't running still show up).
@@ -88,7 +101,7 @@ export function getDailyStats(cwds: string[]): DailyStats {
 
   const repos = knownCwds.map(cwd => ({
     cwd,
-    name: projectName(cwd),
+    name: projectName(cwd, runningNames),
     daily: getRepoDaily(cwd)
   }))
 
@@ -105,20 +118,20 @@ export function getDailyStats(cwds: string[]): DailyStats {
 
     let commits = 0
     let lines = 0
-    const projects: DayProject[] = []
+    const dayProjects: DayProject[] = []
     for (const repo of repos) {
       const c = repo.daily.commitsByDate.get(dateStr) ?? 0
       const l = repo.daily.linesByDate.get(dateStr) ?? 0
       if (c > 0 || l > 0) {
         commits += c
         lines += l
-        projects.push({ cwd: repo.cwd, name: repo.name, commits: c, lines: l })
+        dayProjects.push({ cwd: repo.cwd, name: repo.name, commits: c, lines: l })
       }
     }
-    projects.sort((a, b) => b.commits - a.commits || b.lines - a.lines)
+    dayProjects.sort((a, b) => b.commits - a.commits || b.lines - a.lines)
 
     const tokens = dateStr === todayStr ? tokensToday : (tokensByDate[dateStr] ?? 0)
-    history.push({ date: dateStr, commits, lines, tokens, projects })
+    history.push({ date: dateStr, commits, lines, tokens, projects: dayProjects })
   }
 
   const todayEntry = history[history.length - 1]
@@ -132,7 +145,7 @@ export function getDailyStats(cwds: string[]): DailyStats {
     commitsToday,
     linesChangedToday,
     tokensToday,
-    activeProjects: runningCwds.length,
+    activeProjects: uniqueProjects.length,
     streakDays,
     history
   }

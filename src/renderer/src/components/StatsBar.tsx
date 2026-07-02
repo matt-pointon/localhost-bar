@@ -132,8 +132,18 @@ const WEIGHT_COMMITS = 0.4
 const WEIGHT_LINES = 0.35
 const WEIGHT_TOKENS = 0.25
 
+interface GridDay {
+  date: string
+  level: number
+  lines: number
+  commits: number
+  tokens: number
+  projects: DayProject[]
+}
+
 function ActivityGrid({ history, onHoverDay }: { history: DayActivity[]; onHoverDay?: (day: DayActivity | null) => void }) {
-  const [hoveredDay, setHoveredDay] = useState<{ date: string; commits: number; lines: number; tokens: number } | null>(null)
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   const activityMap = new Map<string, DayActivity>()
   for (const day of history) {
@@ -162,7 +172,7 @@ function ActivityGrid({ history, onHoverDay }: { history: DayActivity[]; onHover
     0.0001
   )
 
-  const days: { date: string; level: number; lines: number; commits: number; tokens: number }[] = []
+  const days: GridDay[] = []
   const today = new Date()
   for (let i = 29; i >= 0; i--) {
     const d = new Date(today)
@@ -180,7 +190,7 @@ function ActivityGrid({ history, onHoverDay }: { history: DayActivity[]; onHover
       else if (ratio > 0.25) level = 2
       else level = 1
     }
-    days.push({ date: dateStr, level, lines, commits, tokens })
+    days.push({ date: dateStr, level, lines, commits, tokens, projects: activity?.projects ?? [] })
   }
 
   const COLS = 6
@@ -198,62 +208,113 @@ function ActivityGrid({ history, onHoverDay }: { history: DayActivity[]; onHover
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
+  const byDate = new Map(days.map(d => [d.date, d]))
   const todayDay = days[days.length - 1]
-  const displayDay = hoveredDay ?? todayDay
+  const selectedDay = selectedDate ? byDate.get(selectedDate) ?? null : null
+  const hoveredDay = hoveredDate ? byDate.get(hoveredDate) ?? null : null
+  const summaryDay = hoveredDay ?? selectedDay ?? todayDay
+
+  const toggleSelect = (day: GridDay) => {
+    if (day.commits === 0 && day.lines === 0 && day.tokens === 0) {
+      setSelectedDate(null)
+      return
+    }
+    setSelectedDate(prev => (prev === day.date ? null : day.date))
+  }
 
   return (
     <div className="no-drag" style={{ position: 'relative' }}>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, gap: 3 }}>
         {days.map((day, i) => {
           const isToday = i === days.length - 1
-          const isHovered = hoveredDay?.date === day.date
-          const showBorder = hoveredDay ? isHovered : isToday
+          const isSelected = selectedDate === day.date
+          const isHovered = hoveredDate === day.date
+          const showBorder = isSelected || isHovered || (!selectedDate && !hoveredDate && isToday)
+          const borderColor = isSelected ? 'oklch(0.80 0.15 145)' : 'rgba(255, 255, 255, 0.25)'
+          const hasActivity = day.commits > 0 || day.lines > 0 || day.tokens > 0
           return (
             <div
               key={day.date}
-              onMouseEnter={() => { setHoveredDay(day); emitHover(day.date) }}
-              onMouseLeave={() => { setHoveredDay(null); emitHover(null) }}
+              onMouseEnter={() => { setHoveredDate(day.date); emitHover(day.date) }}
+              onMouseLeave={() => { setHoveredDate(null); emitHover(null) }}
+              onClick={() => toggleSelect(day)}
               style={{
                 aspectRatio: '1',
                 borderRadius: 3,
                 background: colors[day.level],
-                border: showBorder ? '1px solid rgba(255, 255, 255, 0.25)' : '1px solid transparent',
+                border: showBorder ? `1px solid ${borderColor}` : '1px solid transparent',
                 transition: 'border 100ms, background 300ms',
-                cursor: 'default'
+                cursor: hasActivity ? 'pointer' : 'default'
               }}
             />
           )
         })}
       </div>
 
-      {displayDay && (
+      {summaryDay && (
         <div style={{
           marginTop: 6, fontSize: 10, color: 'var(--color-muted-foreground)',
           display: 'flex', alignItems: 'center', gap: 8
         }}>
           <span style={{ color: 'var(--color-foreground)', fontWeight: 600 }}>
-            {!hoveredDay || displayDay === todayDay ? 'Today' : fmtDate(displayDay.date)}
+            {summaryDay === todayDay && !hoveredDay && !selectedDay ? 'Today' : fmtDate(summaryDay.date)}
           </span>
-          {displayDay.commits > 0 || displayDay.lines > 0 || displayDay.tokens > 0 ? (
+          {summaryDay.commits > 0 || summaryDay.lines > 0 || summaryDay.tokens > 0 ? (
             <>
-              {displayDay.commits > 0 && (
-                <span>{displayDay.commits} commit{displayDay.commits !== 1 ? 's' : ''}</span>
+              {summaryDay.commits > 0 && (
+                <span>{summaryDay.commits} commit{summaryDay.commits !== 1 ? 's' : ''}</span>
               )}
-              {displayDay.lines > 0 && (
+              {summaryDay.lines > 0 && (
                 <>
-                  {displayDay.commits > 0 && <span style={{ opacity: 0.4 }}>·</span>}
-                  <span>{fmt(displayDay.lines)} lines</span>
+                  {summaryDay.commits > 0 && <span style={{ opacity: 0.4 }}>·</span>}
+                  <span>{fmt(summaryDay.lines)} lines</span>
                 </>
               )}
-              {displayDay.tokens > 0 && (
+              {summaryDay.tokens > 0 && (
                 <>
-                  {(displayDay.commits > 0 || displayDay.lines > 0) && <span style={{ opacity: 0.4 }}>·</span>}
-                  <span>{fmt(displayDay.tokens)} tokens</span>
+                  {(summaryDay.commits > 0 || summaryDay.lines > 0) && <span style={{ opacity: 0.4 }}>·</span>}
+                  <span>{fmt(summaryDay.tokens)} tokens</span>
                 </>
               )}
             </>
           ) : (
             <span style={{ opacity: 0.5 }}>No activity</span>
+          )}
+        </div>
+      )}
+
+      {selectedDay && (
+        <div style={{
+          marginTop: 8,
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          paddingTop: 6
+        }}>
+          <div style={{
+            fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.05em',
+            color: 'var(--color-muted-foreground)', marginBottom: 4
+          }}>
+            {selectedDay === todayDay ? 'Today' : fmtDate(selectedDay.date)} · Projects
+          </div>
+          {selectedDay.projects.length > 0 ? (
+            <div style={{ maxHeight: 96, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3 }} className="show-scrollbar">
+              {selectedDay.projects.map(p => (
+                <div key={p.cwd} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <span style={{
+                    fontSize: 11, color: 'var(--color-foreground)', fontWeight: 500,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                  }} title={p.name}>
+                    {p.name}
+                  </span>
+                  <span style={{ fontSize: 10, color: 'var(--color-muted-foreground)', flexShrink: 0 }}>
+                    {p.commits}c · {fmt(p.lines)} lines
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: 10, color: 'var(--color-muted-foreground)', opacity: 0.6 }}>
+              No projects recorded
+            </div>
           )}
         </div>
       )}

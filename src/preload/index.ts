@@ -103,6 +103,11 @@ export interface DayActivity {
   projects: DayProject[]
 }
 
+export interface ProjectRef {
+  cwd: string
+  name: string
+}
+
 export interface DailyStats {
   commitsToday: number
   linesChangedToday: number
@@ -147,7 +152,7 @@ export interface ElectronAPI {
   gitPull: (cwd: string) => Promise<GitActionResult>
   gitCreatePR: (cwd: string) => Promise<GitActionResult>
   gitGetInfo: (cwd: string) => Promise<GitInfo>
-  getDailyStats: (cwds: string[]) => Promise<DailyStats>
+  getDailyStats: (projects: ProjectRef[]) => Promise<DailyStats>
   getTokenStats: () => Promise<TokenStats>
   shareStats: (height: number) => Promise<{ success: boolean; error?: string }>
   getTasks: (cwd: string) => Promise<Task[]>
@@ -182,7 +187,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('deploy:progress', handler)
     return () => ipcRenderer.off('deploy:progress', handler)
   },
-  getDailyStats: (cwds: string[]) => ipcRenderer.invoke('stats:get-daily', cwds),
+  getDailyStats: (projects: ProjectRef[]) => ipcRenderer.invoke('stats:get-daily', projects),
   getTokenStats: () => ipcRenderer.invoke('stats:get-tokens'),
   shareStats: (height: number) => ipcRenderer.invoke('stats:share', { height }),
   getTasks: (cwd: string) => ipcRenderer.invoke('tasks:get', cwd),

@@ -90,6 +90,11 @@ interface DayActivity {
   projects: DayProject[]
 }
 
+interface ProjectRef {
+  cwd: string
+  name: string
+}
+
 interface DailyStats {
   commitsToday: number
   linesChangedToday: number
@@ -136,7 +141,7 @@ interface ElectronAPI {
   gitPull: (cwd: string) => Promise<{ success: boolean; error?: string }>
   gitCreatePR: (cwd: string) => Promise<{ success: boolean; error?: string; url?: string }>
   gitGetInfo: (cwd: string) => Promise<{ ghInstalled: boolean; defaultBranch: string | null }>
-  getDailyStats: (cwds: string[]) => Promise<DailyStats>
+  getDailyStats: (projects: ProjectRef[]) => Promise<DailyStats>
   getTokenStats: () => Promise<TokenStats>
   shareStats: (height: number) => Promise<{ success: boolean; error?: string }>
   getTasks: (cwd: string) => Promise<Task[]>

@@ -38,11 +38,14 @@ export default function App() {
     dismissOffline
   } = useServices()
 
-  const cwds = useMemo(
-    () => services.map(s => s.cwd).filter((c): c is string => c !== null),
+  const projects = useMemo(
+    () =>
+      services
+        .filter(s => s.cwd !== null)
+        .map(s => ({ cwd: s.cwd as string, name: s.name })),
     [services]
   )
-  const stats = useStats(cwds)
+  const stats = useStats(projects)
   const tokenStats = useTokenStats()
 
   const hasRunning = services.length > 0

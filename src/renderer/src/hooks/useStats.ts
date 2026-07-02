@@ -1,27 +1,27 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 
 const POLL_INTERVAL_MS = 30_000
 
-export function useStats(cwds: string[]) {
+export function useStats(projects: ProjectRef[]) {
   const [stats, setStats] = useState<DailyStats | null>(null)
-  const cwdsKey = cwds.slice().sort().join('\n')
-  const prevKey = useRef(cwdsKey)
+  const projectsKey = projects
+    .map(p => `${p.cwd}\t${p.name}`)
+    .sort()
+    .join('\n')
 
   useEffect(() => {
-    const immediate = cwdsKey !== prevKey.current
-    prevKey.current = cwdsKey
-
-    if (cwds.length === 0) {
+    if (projects.length === 0) {
       setStats(null)
       return
     }
 
-    const fetch = () => window.electronAPI.getDailyStats(cwds).then(setStats).catch(() => {})
+    const fetch = () => window.electronAPI.getDailyStats(projects).then(setStats).catch(() => {})
 
     fetch()
     const id = setInterval(fetch, POLL_INTERVAL_MS)
     return () => clearInterval(id)
-  }, [cwdsKey, cwds.length])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectsKey])
 
   return stats
 }
