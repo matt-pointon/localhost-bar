@@ -13,9 +13,10 @@ interface StatsBarProps {
   serviceCount: number
   isLoading: boolean
   onRefresh: () => void
+  onHoverDay?: (day: DayActivity | null) => void
 }
 
-export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh }: StatsBarProps) {
+export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh, onHoverDay }: StatsBarProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [shared, setShared] = useState(false)
 
@@ -83,7 +84,7 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
         )}
       </div>
 
-      <ActivityGrid history={history} />
+      <ActivityGrid history={history} onHoverDay={onHoverDay} />
     </div>
   )
 }
@@ -131,12 +132,18 @@ const WEIGHT_COMMITS = 0.4
 const WEIGHT_LINES = 0.35
 const WEIGHT_TOKENS = 0.25
 
-function ActivityGrid({ history }: { history: DayActivity[] }) {
+function ActivityGrid({ history, onHoverDay }: { history: DayActivity[]; onHoverDay?: (day: DayActivity | null) => void }) {
   const [hoveredDay, setHoveredDay] = useState<{ date: string; commits: number; lines: number; tokens: number } | null>(null)
 
   const activityMap = new Map<string, DayActivity>()
   for (const day of history) {
     activityMap.set(day.date, day)
+  }
+
+  const emitHover = (date: string | null) => {
+    if (!onHoverDay) return
+    if (date === null) { onHoverDay(null); return }
+    onHoverDay(activityMap.get(date) ?? { date, commits: 0, lines: 0, tokens: 0, projects: [] })
   }
 
   // Each metric is normalized against its own max in the window, so no single
@@ -204,8 +211,8 @@ function ActivityGrid({ history }: { history: DayActivity[] }) {
           return (
             <div
               key={day.date}
-              onMouseEnter={() => setHoveredDay(day)}
-              onMouseLeave={() => setHoveredDay(null)}
+              onMouseEnter={() => { setHoveredDay(day); emitHover(day.date) }}
+              onMouseLeave={() => { setHoveredDay(null); emitHover(null) }}
               style={{
                 aspectRatio: '1',
                 borderRadius: 3,

@@ -5,6 +5,7 @@ import { useStats } from './hooks/useStats'
 import { useTokenStats } from './hooks/useTokenStats'
 import { StatsBar } from './components/StatsBar'
 import { ServiceList } from './components/ServiceList'
+import { DayProjectList } from './components/DayProjectList'
 import { EmptyState } from './components/EmptyState'
 import { OfflineRow } from './components/OfflineRow'
 import { GradientBackground } from './components/GradientBackground'
@@ -17,6 +18,7 @@ export default function App() {
   const [availableTools, setAvailableTools] = useState<DetectedTool[]>([])
   const [search, setSearch] = useState('')
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
+  const [hoveredDay, setHoveredDay] = useState<DayActivity | null>(null)
   const { states: deployStates, deploy, setLastDeploy } = useDeployState()
 
   useEffect(() => {
@@ -109,6 +111,7 @@ export default function App() {
             serviceCount={services.length}
             isLoading={isLoading}
             onRefresh={refresh}
+            onHoverDay={setHoveredDay}
           />
         </div>
 
@@ -125,7 +128,9 @@ export default function App() {
               fontSize: 10, fontWeight: 500, textTransform: 'uppercase',
               letterSpacing: '0.05em', color: 'var(--color-muted-foreground)'
             }}>
-              {services.length} Project{services.length !== 1 ? 's' : ''} Running
+              {hoveredDay
+                ? `${hoveredDay.projects.length} Project${hoveredDay.projects.length !== 1 ? 's' : ''} · ${formatDayLabel(hoveredDay.date)}`
+                : `${services.length} Project${services.length !== 1 ? 's' : ''} Running`}
             </span>
           </div>
 
@@ -133,7 +138,9 @@ export default function App() {
           <PortConflictBanner conflicts={portConflicts} />
 
           <div className="flex-1 overflow-y-auto show-scrollbar">
-            {!hasRunning && !hasOffline && !isLoading ? (
+            {hoveredDay ? (
+              <DayProjectList day={hoveredDay} search={search} />
+            ) : !hasRunning && !hasOffline && !isLoading ? (
               <EmptyState />
             ) : (
               <div>
@@ -180,4 +187,11 @@ export default function App() {
       </div>
     </div>
   )
+}
+
+function formatDayLabel(dateStr: string): string {
+  const todayStr = new Date().toISOString().slice(0, 10)
+  if (dateStr === todayStr) return 'Today'
+  const d = new Date(dateStr + 'T00:00:00')
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }

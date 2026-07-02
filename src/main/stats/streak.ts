@@ -2,38 +2,55 @@ import { readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 
+export interface DayProject {
+  cwd: string
+  name: string
+  commits: number
+  lines: number
+}
+
 export interface DayActivity {
   date: string   // "2026-06-24"
   commits: number
   lines: number
   tokens: number
+  projects: DayProject[]  // per-project git breakdown for the day
 }
 
 interface PersistedData {
   lastActiveDate: string
   streakDays: number
-  history: DayActivity[]  // last 30 days
+  tokensByDate: Record<string, number>  // date -> AI tokens used that day
+  knownProjects: string[]               // cwds ever seen running (for historical lookup)
 }
 
 const STATS_DIR = join(homedir(), '.localhost-bar')
 const STATS_FILE = join(STATS_DIR, 'stats.json')
+const MAX_KNOWN_PROJECTS = 40
+const RETENTION_DAYS = 40
 
 function load(): PersistedData {
   try {
     const raw = JSON.parse(readFileSync(STATS_FILE, 'utf8'))
-    const history: DayActivity[] = (raw.history ?? []).map((h: Partial<DayActivity>) => ({
-      date: h.date ?? '',
-      commits: h.commits ?? 0,
-      lines: h.lines ?? 0,
-      tokens: h.tokens ?? 0
-    }))
+    const tokensByDate: Record<string, number> = { ...(raw.tokensByDate ?? {}) }
+
+    // Migrate legacy `history: [{ date, tokens }]` into tokensByDate.
+    if (Array.isArray(raw.history)) {
+      for (const h of raw.history) {
+        if (h && typeof h.date === 'string' && h.tokens) {
+          tokensByDate[h.date] = tokensByDate[h.date] ?? h.tokens
+        }
+      }
+    }
+
     return {
       lastActiveDate: raw.lastActiveDate ?? '',
       streakDays: raw.streakDays ?? 0,
-      history
+      tokensByDate,
+      knownProjects: Array.isArray(raw.knownProjects) ? raw.knownProjects : []
     }
   } catch {
-    return { lastActiveDate: '', streakDays: 0, history: [] }
+    return { lastActiveDate: '', streakDays: 0, tokensByDate: {}, knownProjects: [] }
   }
 }
 
@@ -54,29 +71,44 @@ function yesterdayStr(): string {
   return d.toISOString().slice(0, 10)
 }
 
-export function updateStreak(hasActivityToday: boolean, commits: number, lines: number, tokens: number): number {
+function cutoffStr(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - days)
+  return d.toISOString().slice(0, 10)
+}
+
+export function getTokensByDate(): Record<string, number> {
+  return load().tokensByDate
+}
+
+export function getKnownProjects(): string[] {
+  return load().knownProjects
+}
+
+// Records today's activity: updates the streak, stores today's token total, and
+// remembers which project cwds were seen so past days can be attributed later.
+export function recordDay(
+  hasActivityToday: boolean,
+  tokensToday: number,
+  runningCwds: string[]
+): number {
   const data = load()
   const today = todayStr()
 
-  // Update today's history entry
-  if (hasActivityToday) {
-    const existing = data.history.find(h => h.date === today)
-    if (existing) {
-      existing.commits = commits
-      existing.lines = lines
-      existing.tokens = tokens
-    } else {
-      data.history.push({ date: today, commits, lines, tokens })
-    }
+  data.tokensByDate[today] = tokensToday
+
+  for (const cwd of runningCwds) {
+    if (!data.knownProjects.includes(cwd)) data.knownProjects.push(cwd)
+  }
+  if (data.knownProjects.length > MAX_KNOWN_PROJECTS) {
+    data.knownProjects = data.knownProjects.slice(-MAX_KNOWN_PROJECTS)
   }
 
-  // Trim to last 30 days
-  const cutoff = new Date()
-  cutoff.setDate(cutoff.getDate() - 30)
-  const cutoffStr = cutoff.toISOString().slice(0, 10)
-  data.history = data.history.filter(h => h.date >= cutoffStr)
+  const cutoff = cutoffStr(RETENTION_DAYS)
+  for (const date of Object.keys(data.tokensByDate)) {
+    if (date < cutoff) delete data.tokensByDate[date]
+  }
 
-  // Update streak
   if (hasActivityToday) {
     if (data.lastActiveDate === today) {
       // Already counted today
@@ -91,8 +123,4 @@ export function updateStreak(hasActivityToday: boolean, commits: number, lines: 
 
   save(data)
   return data.streakDays
-}
-
-export function getHistory(): DayActivity[] {
-  return load().history
 }

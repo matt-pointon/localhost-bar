@@ -88,11 +88,19 @@ export interface GitActionResult {
   url?: string
 }
 
+export interface DayProject {
+  cwd: string
+  name: string
+  commits: number
+  lines: number
+}
+
 export interface DayActivity {
   date: string
   commits: number
   lines: number
   tokens: number
+  projects: DayProject[]
 }
 
 export interface DailyStats {
