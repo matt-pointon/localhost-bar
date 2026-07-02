@@ -105,7 +105,7 @@ function ServiceRow({
         onClick={() => !isStopping && !renaming && onOpen(service.port)}
         style={{
           position: 'relative',
-          padding: '8px 10px',
+          padding: '8px 12px',
           display: 'flex',
           alignItems: 'center',
           gap: 9,

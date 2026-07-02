@@ -347,7 +347,7 @@ export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSet
             )}
 
             {/* Separator before deploy */}
-            <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 6px' }} />
+            <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 8px' }} />
 
             {/* Deploy button */}
             {!anyCliInstalled ? (
@@ -428,7 +428,7 @@ export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSet
             {/* Git actions */}
             {hasGit && (
               <>
-                <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 6px' }} />
+                <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 8px' }} />
 
                 {/* Commit */}
                 {hasChanges && !showCommitInput && (
@@ -542,7 +542,7 @@ export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSet
                 {/* Git error message */}
                 {gitError && (
                   <div style={{
-                    padding: '3px 10px',
+                    padding: '4px 10px',
                     fontSize: 10,
                     color: 'var(--color-destructive)',
                     overflow: 'hidden',

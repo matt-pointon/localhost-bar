@@ -20,7 +20,7 @@ export function OfflineRow({ service, onRestart, onDismiss }: OfflineRowProps) {
       onMouseLeave={() => setHovered(false)}
       style={{
         position: 'relative',
-        padding: '8px 10px',
+        padding: '8px 12px',
         display: 'flex',
         alignItems: 'center',
         gap: 9,

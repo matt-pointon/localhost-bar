@@ -70,13 +70,13 @@ export default function App() {
     >
       <GradientBackground />
 
-      <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 20, display: 'flex', gap: 2 }}>
+      <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 20, display: 'flex', gap: 2 }}>
         <button
           className="no-drag"
           onClick={toggleNotifications}
           title={notificationsEnabled ? 'Notifications on' : 'Notifications off'}
           style={{
-            padding: 4, borderRadius: 5, border: 'none', background: 'transparent',
+            padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
             cursor: 'pointer', color: 'var(--color-muted-foreground)', display: 'flex'
           }}
         >
@@ -87,7 +87,7 @@ export default function App() {
           onClick={() => window.electronAPI.quit()}
           title="Quit"
           style={{
-            padding: 4, borderRadius: 5, border: 'none', background: 'transparent',
+            padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
             cursor: 'pointer', color: 'var(--color-muted-foreground)', display: 'flex'
           }}
         >
@@ -122,7 +122,7 @@ export default function App() {
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100%' }}>
           <div className="drag-region" style={{
-            padding: '10px 14px 4px',
+            padding: '12px 16px 4px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between'
@@ -164,14 +164,14 @@ export default function App() {
                 {hasOffline && (
                   <>
                     <div style={{
-                      padding: '12px 14px 6px',
+                      padding: '12px 16px 4px',
                       borderTop: hasRunning ? '1px solid rgba(255,255,255,0.04)' : 'none'
                     }}>
                       <span style={{ fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-muted-foreground)' }}>
                         Offline
                       </span>
                     </div>
-                    <div style={{ padding: '0 8px 8px' }}>
+                    <div style={{ padding: '0 0 8px' }}>
                       {offlineServices.map(service => (
                         <OfflineRow
                           key={service.port}

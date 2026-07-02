@@ -52,18 +52,18 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
     <div
       ref={containerRef}
       className="drag-region"
-      style={{ padding: '12px 14px 12px', position: 'relative' }}
+      style={{ padding: '12px 16px', position: 'relative' }}
     >
       <div
         className="no-drag"
-        style={{ position: 'absolute', top: 12, right: 14, display: 'flex', gap: 2 }}
+        style={{ position: 'absolute', top: 12, right: 16, display: 'flex', gap: 2 }}
       >
         <HeaderBtn title={shared ? 'Copied!' : 'Share stats'} onClick={handleShare}>
           {shared ? <Check size={12} style={{ color: 'var(--color-success)' }} /> : <Share size={12} />}
         </HeaderBtn>
       </div>
 
-      <div style={{ display: 'flex', gap: 20, marginBottom: 14 }}>
+      <div style={{ display: 'flex', gap: 20, marginBottom: 16 }}>
         {linesChangedToday > 0 && (
           <StatNumber value={fmt(linesChangedToday)} label={linesChangedToday === 1 ? 'Line' : 'Lines'} />
         )}
@@ -114,7 +114,7 @@ function HeaderBtn({ title, onClick, children }: { title: string; onClick: () =>
       title={title}
       className="no-drag"
       style={{
-        padding: 4, borderRadius: 5, border: 'none', background: 'transparent',
+        padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
         cursor: 'pointer', color: 'var(--color-muted-foreground)', display: 'flex', alignItems: 'center'
       }}
       onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-hover-overlay)'; e.currentTarget.style.color = 'var(--color-foreground)' }}
@@ -224,7 +224,7 @@ function ActivityGrid({ history, onHoverDay }: { history: DayActivity[]; onHover
 
   return (
     <div className="no-drag" style={{ position: 'relative' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, gap: 3 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, gap: 4 }}>
         {days.map((day, i) => {
           const isToday = i === days.length - 1
           const isSelected = selectedDate === day.date
@@ -240,7 +240,7 @@ function ActivityGrid({ history, onHoverDay }: { history: DayActivity[]; onHover
               onClick={() => toggleSelect(day)}
               style={{
                 aspectRatio: '1',
-                borderRadius: 3,
+                borderRadius: 4,
                 background: colors[day.level],
                 border: showBorder ? `1px solid ${borderColor}` : '1px solid transparent',
                 transition: 'border 100ms, background 300ms',
