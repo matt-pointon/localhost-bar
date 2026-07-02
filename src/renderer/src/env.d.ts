@@ -79,11 +79,13 @@ interface DayActivity {
   date: string
   commits: number
   lines: number
+  tokens: number
 }
 
 interface DailyStats {
   commitsToday: number
   linesChangedToday: number
+  tokensToday: number
   activeProjects: number
   streakDays: number
   history: DayActivity[]

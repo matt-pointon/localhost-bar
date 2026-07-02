@@ -92,11 +92,13 @@ export interface DayActivity {
   date: string
   commits: number
   lines: number
+  tokens: number
 }
 
 export interface DailyStats {
   commitsToday: number
   linesChangedToday: number
+  tokensToday: number
   activeProjects: number
   streakDays: number
   history: DayActivity[]

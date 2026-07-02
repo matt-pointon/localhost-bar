@@ -124,17 +124,38 @@ function HeaderBtn({ title, onClick, children }: { title: string; onClick: () =>
   )
 }
 
+// Relative weights for the composite activity score. Commits are the strongest
+// signal of a shipped unit of work, with lines and AI tokens filling in the effort
+// that never made it into a commit yet.
+const WEIGHT_COMMITS = 0.4
+const WEIGHT_LINES = 0.35
+const WEIGHT_TOKENS = 0.25
+
 function ActivityGrid({ history }: { history: DayActivity[] }) {
-  const [hoveredDay, setHoveredDay] = useState<{ date: string; commits: number; lines: number } | null>(null)
+  const [hoveredDay, setHoveredDay] = useState<{ date: string; commits: number; lines: number; tokens: number } | null>(null)
 
   const activityMap = new Map<string, DayActivity>()
   for (const day of history) {
     activityMap.set(day.date, day)
   }
 
+  // Each metric is normalized against its own max in the window, so no single
+  // large-magnitude metric (e.g. tokens) drowns out the others.
+  const maxCommits = Math.max(1, ...history.map(h => h.commits))
   const maxLines = Math.max(1, ...history.map(h => h.lines))
+  const maxTokens = Math.max(1, ...history.map(h => h.tokens ?? 0))
 
-  const days: { date: string; level: number; lines: number; commits: number }[] = []
+  const score = (commits: number, lines: number, tokens: number) =>
+    WEIGHT_COMMITS * (commits / maxCommits) +
+    WEIGHT_LINES * (lines / maxLines) +
+    WEIGHT_TOKENS * (tokens / maxTokens)
+
+  const maxScore = Math.max(
+    ...history.map(h => score(h.commits, h.lines, h.tokens ?? 0)),
+    0.0001
+  )
+
+  const days: { date: string; level: number; lines: number; commits: number; tokens: number }[] = []
   const today = new Date()
   for (let i = 29; i >= 0; i--) {
     const d = new Date(today)
@@ -143,15 +164,16 @@ function ActivityGrid({ history }: { history: DayActivity[] }) {
     const activity = activityMap.get(dateStr)
     const lines = activity?.lines ?? 0
     const commits = activity?.commits ?? 0
+    const tokens = activity?.tokens ?? 0
     let level = 0
-    if (lines > 0) {
-      const ratio = lines / maxLines
+    if (commits > 0 || lines > 0 || tokens > 0) {
+      const ratio = score(commits, lines, tokens) / maxScore
       if (ratio > 0.75) level = 4
       else if (ratio > 0.5) level = 3
       else if (ratio > 0.25) level = 2
       else level = 1
     }
-    days.push({ date: dateStr, level, lines, commits })
+    days.push({ date: dateStr, level, lines, commits, tokens })
   }
 
   const COLS = 6
@@ -205,11 +227,23 @@ function ActivityGrid({ history }: { history: DayActivity[] }) {
           <span style={{ color: 'var(--color-foreground)', fontWeight: 600 }}>
             {!hoveredDay || displayDay === todayDay ? 'Today' : fmtDate(displayDay.date)}
           </span>
-          {displayDay.commits > 0 ? (
+          {displayDay.commits > 0 || displayDay.lines > 0 || displayDay.tokens > 0 ? (
             <>
-              <span>{displayDay.commits} commit{displayDay.commits !== 1 ? 's' : ''}</span>
-              <span style={{ opacity: 0.4 }}>·</span>
-              <span>{fmt(displayDay.lines)} lines</span>
+              {displayDay.commits > 0 && (
+                <span>{displayDay.commits} commit{displayDay.commits !== 1 ? 's' : ''}</span>
+              )}
+              {displayDay.lines > 0 && (
+                <>
+                  {displayDay.commits > 0 && <span style={{ opacity: 0.4 }}>·</span>}
+                  <span>{fmt(displayDay.lines)} lines</span>
+                </>
+              )}
+              {displayDay.tokens > 0 && (
+                <>
+                  {(displayDay.commits > 0 || displayDay.lines > 0) && <span style={{ opacity: 0.4 }}>·</span>}
+                  <span>{fmt(displayDay.tokens)} tokens</span>
+                </>
+              )}
             </>
           ) : (
             <span style={{ opacity: 0.5 }}>No activity</span>

@@ -3,10 +3,12 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 import { updateStreak, getHistory } from './streak'
 import type { DayActivity } from './streak'
+import { getTokenStats } from '../token-stats'
 
 export interface DailyStats {
   commitsToday: number
   linesChangedToday: number
+  tokensToday: number
   activeProjects: number
   streakDays: number
   history: DayActivity[]
@@ -68,15 +70,28 @@ export function getDailyStats(cwds: string[]): DailyStats {
     linesChangedToday += stats.lines
   }
 
-  const hasActivity = commitsToday > 0
-  const streakDays = updateStreak(hasActivity, commitsToday, linesChangedToday)
+  const tokensToday = getTokensToday()
+
+  // Activity now counts commits, lines, or AI tokens — any signals a working day.
+  const hasActivity = commitsToday > 0 || linesChangedToday > 0 || tokensToday > 0
+  const streakDays = updateStreak(hasActivity, commitsToday, linesChangedToday, tokensToday)
   const history = getHistory()
 
   return {
     commitsToday,
     linesChangedToday,
+    tokensToday,
     activeProjects: uniqueCwds.length,
     streakDays,
     history
+  }
+}
+
+// Today's AI tokens used (Claude Desktop reports a running token count for the day).
+function getTokensToday(): number {
+  try {
+    return getTokenStats().claudeDesktop?.tokens ?? 0
+  } catch {
+    return 0
   }
 }

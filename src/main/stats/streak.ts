@@ -6,6 +6,7 @@ export interface DayActivity {
   date: string   // "2026-06-24"
   commits: number
   lines: number
+  tokens: number
 }
 
 interface PersistedData {
@@ -20,10 +21,16 @@ const STATS_FILE = join(STATS_DIR, 'stats.json')
 function load(): PersistedData {
   try {
     const raw = JSON.parse(readFileSync(STATS_FILE, 'utf8'))
+    const history: DayActivity[] = (raw.history ?? []).map((h: Partial<DayActivity>) => ({
+      date: h.date ?? '',
+      commits: h.commits ?? 0,
+      lines: h.lines ?? 0,
+      tokens: h.tokens ?? 0
+    }))
     return {
       lastActiveDate: raw.lastActiveDate ?? '',
       streakDays: raw.streakDays ?? 0,
-      history: raw.history ?? []
+      history
     }
   } catch {
     return { lastActiveDate: '', streakDays: 0, history: [] }
@@ -47,7 +54,7 @@ function yesterdayStr(): string {
   return d.toISOString().slice(0, 10)
 }
 
-export function updateStreak(hasActivityToday: boolean, commits: number, lines: number): number {
+export function updateStreak(hasActivityToday: boolean, commits: number, lines: number, tokens: number): number {
   const data = load()
   const today = todayStr()
 
@@ -57,8 +64,9 @@ export function updateStreak(hasActivityToday: boolean, commits: number, lines: 
     if (existing) {
       existing.commits = commits
       existing.lines = lines
+      existing.tokens = tokens
     } else {
-      data.history.push({ date: today, commits, lines })
+      data.history.push({ date: today, commits, lines, tokens })
     }
   }
 
