@@ -75,15 +75,25 @@ interface DeployInfo {
   lastDeploy: DeployRecord | null
 }
 
+interface DayProject {
+  cwd: string
+  name: string
+  commits: number
+  lines: number
+}
+
 interface DayActivity {
   date: string
   commits: number
   lines: number
+  tokens: number
+  projects: DayProject[]
 }
 
 interface DailyStats {
   commitsToday: number
   linesChangedToday: number
+  tokensToday: number
   activeProjects: number
   streakDays: number
   history: DayActivity[]

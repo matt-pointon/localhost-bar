@@ -109,3 +109,13 @@ function formatName(s: string): string {
     .map(part => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ')
 }
+
+// Derive a project display name directly from a working directory, without a
+// running process (used for historical project attribution in the stats grid).
+export function inferNameFromCwd(cwd: string): string {
+  const dirName = basename(cwd)
+  if (dirName && dirName !== '/' && dirName !== 'root' && dirName !== 'home') {
+    return formatName(dirName)
+  }
+  return formatName(dirName || cwd)
+}
