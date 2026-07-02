@@ -2,6 +2,7 @@ import { execSync } from 'child_process'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { recordDay, getTokensByDate, getKnownProjects } from './streak'
+import { localDateStr, localDateStrOffset } from '../../shared/dates'
 import type { DayActivity, DayProject } from './streak'
 import { getTokenStats } from '../token-stats'
 import { inferNameFromCwd } from '../port-scanner/name-inferrer'
@@ -107,14 +108,11 @@ export function getDailyStats(projects: ProjectRef[]): DailyStats {
 
   const tokensByDate = getTokensByDate()
   const tokensToday = getTokensToday()
-  const today = new Date()
-  const todayStr = today.toISOString().slice(0, 10)
+  const todayStr = localDateStr()
 
   const history: DayActivity[] = []
   for (let i = WINDOW_DAYS - 1; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().slice(0, 10)
+    const dateStr = localDateStrOffset(i)
 
     let commits = 0
     let lines = 0

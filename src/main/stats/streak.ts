@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
+import { localDateStr, localDateStrOffset } from '../../shared/dates'
 
 export interface DayProject {
   cwd: string
@@ -62,19 +63,15 @@ function save(data: PersistedData): void {
 }
 
 function todayStr(): string {
-  return new Date().toISOString().slice(0, 10)
+  return localDateStr()
 }
 
 function yesterdayStr(): string {
-  const d = new Date()
-  d.setDate(d.getDate() - 1)
-  return d.toISOString().slice(0, 10)
+  return localDateStrOffset(1)
 }
 
 function cutoffStr(days: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() - days)
-  return d.toISOString().slice(0, 10)
+  return localDateStrOffset(days)
 }
 
 export function getTokensByDate(): Record<string, number> {

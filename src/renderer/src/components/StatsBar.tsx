@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { Share, Check } from 'lucide-react'
+import { localDateStr, localDateStrOffset } from '../../../shared/dates'
 
 function fmt(n: number): string {
   if (n >= 10_000) return `${(n / 1000).toFixed(0)}K`
@@ -36,7 +37,7 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
   const linesChangedToday = stats?.linesChangedToday ?? 0
   const streakDays = stats?.streakDays ?? 0
   const history = stats?.history ?? []
-  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayStr = localDateStr()
 
   const activityMap = new Map<string, DayActivity>()
   for (const day of history) {
@@ -112,6 +113,9 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
           {!isLoading && displayDay.commits === 0 && displayDay.lines === 0 && displayDay.tokens === 0 && (
             <StatNumber value="—" label={isViewingToday ? 'Today' : 'No activity'} />
           )}
+          {isLoading && !stats && (
+            <StatNumber value="…" label="Loading" />
+          )}
         </div>
       </div>
 
@@ -119,11 +123,9 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
         history={history}
         hoveredDate={hoveredDate}
         selectedDate={selectedDate}
-        onHoverDate={(date) => {
-          setHoveredDate(date)
-          if (!onHoverDay) return
-          if (date === null) { onHoverDay(null); return }
-          onHoverDay(activityMap.get(date) ?? { date, commits: 0, lines: 0, tokens: 0, projects: [] })
+        onHoverDay={(day) => {
+          setHoveredDate(day?.date ?? null)
+          onHoverDay?.(day)
         }}
         onSelectDate={setSelectedDate}
       />
@@ -184,9 +186,8 @@ interface GridDay {
 }
 
 function fmtDisplayDate(dateStr: string): string {
-  const todayStr = new Date().toISOString().slice(0, 10)
-  if (dateStr === todayStr) return 'Today'
-  const d = new Date(dateStr + 'T00:00:00')
+  if (dateStr === localDateStr()) return 'Today'
+  const d = new Date(dateStr + 'T12:00:00')
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
@@ -194,13 +195,13 @@ function ActivityGrid({
   history,
   hoveredDate,
   selectedDate,
-  onHoverDate,
+  onHoverDay,
   onSelectDate
 }: {
   history: DayActivity[]
   hoveredDate: string | null
   selectedDate: string | null
-  onHoverDate: (date: string | null) => void
+  onHoverDay: (day: DayActivity | null) => void
   onSelectDate: (date: string | null) => void
 }) {
 
@@ -226,11 +227,8 @@ function ActivityGrid({
   )
 
   const days: GridDay[] = []
-  const today = new Date()
   for (let i = 29; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().slice(0, 10)
+    const dateStr = localDateStrOffset(i)
     const activity = activityMap.get(dateStr)
     const lines = activity?.lines ?? 0
     const commits = activity?.commits ?? 0
@@ -257,13 +255,22 @@ function ActivityGrid({
   ]
 
   const fmtDate = (dateStr: string) => {
-    const d = new Date(dateStr + 'T00:00:00')
+    const d = new Date(dateStr + 'T12:00:00')
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
+
+  const toDayActivity = (day: GridDay): DayActivity => ({
+    date: day.date,
+    commits: day.commits,
+    lines: day.lines,
+    tokens: day.tokens,
+    projects: day.projects
+  })
 
   const byDate = new Map(days.map(d => [d.date, d]))
   const todayDay = days[days.length - 1]
   const selectedDay = selectedDate ? byDate.get(selectedDate) ?? null : null
+  const hoveredDay = hoveredDate ? byDate.get(hoveredDate) ?? null : null
 
   const toggleSelect = (day: GridDay) => {
     if (day.commits === 0 && day.lines === 0 && day.tokens === 0) {
@@ -286,8 +293,8 @@ function ActivityGrid({
           return (
             <div
               key={day.date}
-              onMouseEnter={() => onHoverDate(day.date)}
-              onMouseLeave={() => onHoverDate(null)}
+              onMouseEnter={() => onHoverDay(toDayActivity(day))}
+              onMouseLeave={() => onHoverDay(null)}
               onClick={() => toggleSelect(day)}
               style={{
                 aspectRatio: '1',
@@ -301,6 +308,36 @@ function ActivityGrid({
           )
         })}
       </div>
+
+      {hoveredDay && !selectedDay && hoveredDay.projects.length > 0 && (
+        <div style={{
+          marginTop: 8,
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          paddingTop: 6
+        }}>
+          <div style={{
+            fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.05em',
+            color: 'var(--color-muted-foreground)', marginBottom: 4
+          }}>
+            {hoveredDay === todayDay ? 'Today' : fmtDate(hoveredDay.date)} · Projects
+          </div>
+          <div style={{ maxHeight: 72, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3 }} className="show-scrollbar">
+            {hoveredDay.projects.map(p => (
+              <div key={p.cwd} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{
+                  fontSize: 11, color: 'var(--color-foreground)', fontWeight: 500,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                }} title={p.name}>
+                  {p.name}
+                </span>
+                <span style={{ fontSize: 10, color: 'var(--color-muted-foreground)', flexShrink: 0 }}>
+                  {p.commits}c · {fmt(p.lines)} lines
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {selectedDay && (
         <div style={{

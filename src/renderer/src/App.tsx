@@ -11,6 +11,7 @@ import { OfflineRow } from './components/OfflineRow'
 import { GradientBackground } from './components/GradientBackground'
 import { PortConflictBanner } from './components/PortConflictBanner'
 import { SearchBar } from './components/SearchBar'
+import { localDateStr } from '../../shared/dates'
 import { X, Bell, BellOff } from 'lucide-react'
 import type { DetectedTool } from './components/QuickActionsMenu'
 
@@ -193,8 +194,7 @@ export default function App() {
 }
 
 function formatDayLabel(dateStr: string): string {
-  const todayStr = new Date().toISOString().slice(0, 10)
-  if (dateStr === todayStr) return 'Today'
-  const d = new Date(dateStr + 'T00:00:00')
+  if (dateStr === localDateStr()) return 'Today'
+  const d = new Date(dateStr + 'T12:00:00')
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }

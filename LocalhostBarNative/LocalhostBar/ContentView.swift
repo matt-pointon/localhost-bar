@@ -4,11 +4,12 @@ struct ContentView: View {
     @EnvironmentObject var portScanner: PortScanner
     @EnvironmentObject var toolRegistry: ToolRegistry
     @State private var hoveredServiceId: String?
+    @State private var hoveredDay: DayActivity?
     
     var body: some View {
         HStack(spacing: 0) {
             // Left: Stats panel
-            StatsView(services: portScanner.services)
+            StatsView(services: portScanner.services, hoveredDay: $hoveredDay)
                 .frame(width: 220)
             
             // Divider
@@ -21,7 +22,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 0) {
                 // Header
                 HStack {
-                    Text("\(portScanner.services.count) Project\(portScanner.services.count == 1 ? "" : "s") Running")
+                    Text(headerTitle)
                         .font(.system(size: 10, weight: .medium))
                         .textCase(.uppercase)
                         .tracking(0.5)
@@ -43,8 +44,10 @@ struct ContentView: View {
                 .padding(.top, 10)
                 .padding(.bottom, 4)
                 
-                // Service list or empty state
-                if portScanner.services.isEmpty && !portScanner.isScanning {
+                // Service list, day history, or empty state
+                if let hoveredDay {
+                    DayProjectListView(day: hoveredDay)
+                } else if portScanner.services.isEmpty && !portScanner.isScanning {
                     EmptyStateView()
                 } else {
                     ScrollView {
@@ -105,6 +108,30 @@ struct ContentView: View {
         }
     }
     
+    private var headerTitle: String {
+        if let hoveredDay {
+            let count = hoveredDay.projects.count
+            let label = formatDayLabel(hoveredDay.date)
+            return "\(count) Project\(count == 1 ? "" : "s") · \(label)"
+        }
+        let count = portScanner.services.count
+        return "\(count) Project\(count == 1 ? "" : "s") Running"
+    }
+
+    private func formatDayLabel(_ dateStr: String) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar.current
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+        if dateStr == today { return "Today" }
+
+        guard let date = formatter.date(from: dateStr) else { return dateStr }
+        let display = DateFormatter()
+        display.dateFormat = "E, MMM d"
+        return display.string(from: date)
+    }
+
     private func openInBrowser(port: Int) {
         if let url = URL(string: "http://localhost:\(port)") {
             NSWorkspace.shared.open(url)
