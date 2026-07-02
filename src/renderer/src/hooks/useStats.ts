@@ -10,11 +10,6 @@ export function useStats(projects: ProjectRef[]) {
     .join('\n')
 
   useEffect(() => {
-    if (projects.length === 0) {
-      setStats(null)
-      return
-    }
-
     const fetch = () => window.electronAPI.getDailyStats(projects).then(setStats).catch(() => {})
 
     fetch()
