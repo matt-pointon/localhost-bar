@@ -9,6 +9,7 @@ A macOS menu bar app for designers and vibe coders that shows all running localh
 - Only shows dev runtimes (node, bun, deno, python, ruby, etc.) — filters out system services
 - Shows service name, port, git branch + changes, stack tags, memory usage
 - Per-project AI origin badges (Cursor, Claude, etc.) and active agent indicators ("Who's coding?")
+- Recent AI projects/sessions from local Cursor, Claude Code, and Codex data (even when no server is running)
 - Port conflict warnings when multiple services share a port
 - Project tasks accordion (Pro) — checklist synced to AI config files
 - Tracks offline services with restart/dismiss
@@ -53,6 +54,7 @@ src/
     deploy/                         # Vercel / Railway / Netlify integration
     stats/                          # Daily commits/lines/streak
     token-stats/                    # Cursor, Claude Desktop, Claude Code usage
+    session-sources/                # Local Cursor/Claude/Codex AI session discovery
   preload/index.ts                  # contextBridge API
   renderer/src/
     App.tsx                         # Panel layout: stats + project list
@@ -60,8 +62,10 @@ src/
       useServices.ts                # 3s polling, offline tracking
       useTasks.ts                   # Per-project tasks
       useStats.ts / useTokenStats.ts
+      useAiProjects.ts              # Recent AI projects/sessions (30s poll)
     components/
       ServiceList.tsx               # Service rows (git, tags, copy URL, tasks)
+      AiProjectList.tsx             # Recent AI projects (no running server required)
       QuickActionsMenu.tsx          # Deploy, git, open-in menu
       StatsBar.tsx                  # Heatmap + share
       ToolIcons.tsx                 # Origin + active agent badges
@@ -75,12 +79,13 @@ src/
 
 - **Allowlist not blocklist** for port filtering — only show known dev runtimes
 - **Dual tool detection** — global registry for "Open in" menu + per-project origin markers for badges + process-based active agent detection
+- **AI sessions from local files** — Cursor/Claude/Codex have no stable public session APIs; `session-sources/` reads on-disk indexes (SQLite/JSONL) and surfaces a Recent AI section plus per-row activity on running servers
 - **Synchronous ref mirror** (`servicesRef`) in useServices — avoids React async state timing issues
 - **Portal dropdowns** — QuickActionsMenu renders into `document.body`
 
 ## Project status
 
-Phases 1–4 complete. Auto-update infrastructure in place.
+Phases 1–4 complete. Auto-update infrastructure in place. AI session/project discovery from local Cursor, Claude Code, and Codex data is wired.
 
 Remaining nice-to-have: health checks, launch-at-login UI, monorepo grouping, branded share templates.
 
