@@ -123,6 +123,29 @@ export interface TokenStats {
   claudeCode: { prompts: number; sessions: number } | null
 }
 
+export type AiToolId = 'cursor' | 'claude' | 'codex'
+
+export interface AiProjectSession {
+  tool: AiToolId
+  sessionId: string
+  cwd: string
+  title?: string
+  lastActiveAt: number
+  messageCount?: number
+  gitBranch?: string
+  isActive: boolean
+}
+
+export interface AiProject {
+  cwd: string
+  name: string
+  tools: AiToolId[]
+  sessions: AiProjectSession[]
+  lastActiveAt: number
+  isActive: boolean
+  hasRunningServer: boolean
+}
+
 export interface GitInfo {
   ghInstalled: boolean
   defaultBranch: string | null
@@ -154,6 +177,8 @@ export interface ElectronAPI {
   gitGetInfo: (cwd: string) => Promise<GitInfo>
   getDailyStats: (projects: ProjectRef[]) => Promise<DailyStats>
   getTokenStats: () => Promise<TokenStats>
+  getAiProjects: (runningCwds?: string[]) => Promise<AiProject[]>
+  resumeAiSession: (tool: AiToolId, sessionId: string, cwd: string) => Promise<{ success: boolean; error?: string }>
   shareStats: (height: number) => Promise<{ success: boolean; error?: string }>
   getTasks: (cwd: string) => Promise<Task[]>
   addTask: (cwd: string, text: string) => Promise<{ success: boolean; tasks?: Task[]; error?: string }>
@@ -189,6 +214,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   getDailyStats: (projects: ProjectRef[]) => ipcRenderer.invoke('stats:get-daily', projects),
   getTokenStats: () => ipcRenderer.invoke('stats:get-tokens'),
+  getAiProjects: (runningCwds?: string[]) => ipcRenderer.invoke('sessions:get-ai-projects', runningCwds),
+  resumeAiSession: (tool: AiToolId, sessionId: string, cwd: string) =>
+    ipcRenderer.invoke('sessions:resume', { tool, sessionId, cwd }),
   shareStats: (height: number) => ipcRenderer.invoke('stats:share', { height }),
   getTasks: (cwd: string) => ipcRenderer.invoke('tasks:get', cwd),
   addTask: (cwd: string, text: string) => ipcRenderer.invoke('tasks:add', { cwd, text }),
