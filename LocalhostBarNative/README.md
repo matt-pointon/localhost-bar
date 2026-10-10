@@ -20,12 +20,13 @@ Built entirely in **Swift + SwiftUI** for optimal performance, battery life, and
 - **Siri Shortcuts** - "Show my servers", "Stop server on port 3000"
 - **Desktop Widget** - Glanceable server count widget
 - **System Appearance** - Automatic light/dark mode support
-- **Native Performance** - ~50MB memory, <100ms launch time
+- **Native App** - Swift/SwiftUI, no bundled browser runtime
 
 ## Requirements
 
 - macOS 14.0 (Sonoma) or later
-- Xcode 15.0 or later
+- Xcode 15.0 or later (latest-stable is what CI uses)
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen) — the `.xcodeproj` is generated from `project.yml`, not checked in (`brew install xcodegen`)
 
 ## Project Structure
 
@@ -60,29 +61,30 @@ LocalhostBarNative/
 
 ## Building
 
-### Option 1: Create Xcode Project Manually
-
-1. Open Xcode and create a new macOS App project
-2. Product Name: `LocalhostBar`
-3. Bundle Identifier: `com.yourname.localhostbar`
-4. Interface: SwiftUI
-5. Language: Swift
-
-Then:
-1. Delete the default `ContentView.swift` and `LocalhostBarApp.swift`
-2. Drag all files from this `LocalhostBar/` folder into the Xcode project
-3. Add a Widget Extension target for `LocalhostBarWidget`
-4. Set the deployment target to macOS 14.0
-5. Configure signing and capabilities
-
-### Option 2: Use Swift Package Manager
+The Xcode project is generated from [`project.yml`](project.yml) with XcodeGen, so there's no
+manual target setup — this is the same flow CI uses
+([`.github/workflows/build-native-macos.yml`](../.github/workflows/build-native-macos.yml)).
 
 ```bash
+brew install xcodegen         # one-time
 cd LocalhostBarNative
-swift build
+xcodegen generate             # writes LocalhostBar.xcodeproj from project.yml
+open LocalhostBar.xcodeproj   # build/run the LocalhostBar scheme in Xcode
 ```
 
-Note: For a full macOS app with widgets and App Intents, Xcode is recommended.
+To build from the command line the way CI does:
+
+```bash
+xcodebuild -project LocalhostBar.xcodeproj \
+  -scheme LocalhostBar \
+  -configuration Release \
+  -destination 'platform=macOS' \
+  CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
+The bundle identifier (`com.localhostbar.app`) and deployment target (macOS 14.0) are defined in
+`project.yml`; edit them there rather than in Xcode, since the project file is regenerated.
 
 ## Configuration
 
@@ -110,18 +112,13 @@ The app provides these shortcuts:
 
 ## Widget
 
-The widget extension shows:
+A WidgetKit extension (`LocalhostBarWidget/`) is included in the source and shows:
 - **Small**: Server count with green indicator
 - **Medium**: Server count + list of top 3 servers with ports
 
-## Performance Comparison
-
-| Metric | Electron Version | Native Version |
-|--------|------------------|----------------|
-| Memory (idle) | ~350MB | ~50MB |
-| Startup time | 2-3 seconds | <100ms |
-| Bundle size | ~200MB | ~5MB |
-| Battery impact | High (Chromium) | Minimal |
+> Note: the widget target is currently commented out in [`project.yml`](project.yml), so the
+> default build produces the menu-bar app only. Uncomment and configure signing for the widget
+> target to include it.
 
 ## App Store Submission
 
@@ -150,7 +147,7 @@ To be considered for featuring on the Mac App Store:
 
 ## License
 
-MIT License - See LICENSE file
+MIT License — see [LICENSE](../LICENSE) in the repository root.
 
 ## Credits
 
