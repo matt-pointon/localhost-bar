@@ -38,7 +38,7 @@
     "productName": "Localhost Bar",
     "publish": {
       "provider": "github",
-      "owner": "mattpointon",
+      "owner": "matt-pointon",
       "repo": "localhost-bar"
     },
     "mac": {
