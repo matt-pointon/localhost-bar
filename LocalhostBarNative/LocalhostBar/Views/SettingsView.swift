@@ -35,9 +35,9 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
                 
-                Link("GitHub Repository", destination: URL(string: "https://github.com/mattpointon/localhost-bar")!)
+                Link("GitHub Repository", destination: URL(string: "https://github.com/matt-pointon/localhost-bar")!)
                 
-                Link("Report an Issue", destination: URL(string: "https://github.com/mattpointon/localhost-bar/issues")!)
+                Link("Report an Issue", destination: URL(string: "https://github.com/matt-pointon/localhost-bar/issues")!)
             } header: {
                 Text("About")
             }
