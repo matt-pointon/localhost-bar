@@ -12,6 +12,8 @@ import { gitCommit, gitPull, gitCreatePR, isGhInstalled, getDefaultBranch } from
 import { getDailyStats } from './stats/collector'
 import type { ProjectRef } from './stats/collector'
 import { getTokenStats } from './token-stats'
+import { getAiProjects, buildResumeCommand } from './session-sources'
+import type { AiToolId } from './session-sources'
 import { getSettings, setSettings, togglePin, setRename } from './settings'
 import { setNotificationsEnabled } from './notifications'
 import { getTasks, addTask, toggleTask, removeTask } from './tasks/store'
@@ -142,6 +144,38 @@ export function registerIpcHandlers(): void {
     execSync(`osascript -e '${script}'`, { timeout: 5000 })
   }
 
+  function openTerminalWithResume(safeCwd: string, cmd: string): void {
+    if (process.platform === 'darwin') {
+      const useIterm = existsSync('/Applications/iTerm.app')
+      const script = useIterm
+        ? `tell application "iTerm"\nactivate\ncreate window with default profile command "cd '${safeCwd}' && ${cmd}"\nend tell`
+        : `tell application "Terminal"\ndo script "cd '${safeCwd}' && ${cmd}"\nactivate\nend tell`
+      execSync(`osascript -e '${script}'`, { timeout: 5000 })
+      return
+    }
+
+    // Linux / other: launch a terminal emulator if available
+    const cwd = safeCwd.replace(/\\'/g, "'")
+    const candidates: [string, string[]][] = [
+      ['x-terminal-emulator', ['-e', 'bash', '-lc', `cd '${safeCwd}' && ${cmd}; exec bash`]],
+      ['gnome-terminal', ['--', 'bash', '-lc', `cd '${safeCwd}' && ${cmd}; exec bash`]],
+      ['xfce4-terminal', ['-e', `bash -lc "cd '${safeCwd}' && ${cmd}; exec bash"`]],
+      ['xterm', ['-e', 'bash', '-lc', `cd '${safeCwd}' && ${cmd}; exec bash`]]
+    ]
+
+    for (const [bin, args] of candidates) {
+      try {
+        spawn(bin, args, { detached: true, stdio: 'ignore', cwd }).unref()
+        return
+      } catch {
+        continue
+      }
+    }
+
+    // Last resort: spawn the tool directly without a terminal UI
+    spawn('bash', ['-lc', cmd], { detached: true, stdio: 'ignore', cwd }).unref()
+  }
+
   ipcMain.handle('deploy:get-info', (_event, cwd: string) => {
     return {
       target: detectDeployTarget(cwd),
@@ -201,6 +235,36 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('stats:get-tokens', () => {
     return getTokenStats()
   })
+
+  ipcMain.handle('sessions:get-ai-projects', (_event, runningCwds?: string[]) => {
+    return getAiProjects(runningCwds)
+  })
+
+  ipcMain.handle(
+    'sessions:resume',
+    async (
+      _event,
+      { tool, sessionId, cwd }: { tool: AiToolId; sessionId: string; cwd: string }
+    ) => {
+      try {
+        const built = buildResumeCommand(tool, sessionId, cwd)
+        if (!built) return { success: false, error: `Unknown tool: ${tool}` }
+
+        if (tool === 'cursor') {
+          spawn(built.command, built.args, { detached: true, stdio: 'ignore', cwd }).unref()
+          return { success: true }
+        }
+
+        // Claude / Codex: open a terminal in the project and resume the session
+        const cmd = [built.command, ...built.args].join(' ')
+        const safe = cwd.replace(/'/g, "'\\''")
+        openTerminalWithResume(safe, cmd)
+        return { success: true }
+      } catch (err: unknown) {
+        return { success: false, error: String(err) }
+      }
+    }
+  )
 
   ipcMain.handle('stats:share', async (event, { height }: { height: number }) => {
     try {

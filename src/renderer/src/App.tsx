@@ -3,9 +3,11 @@ import { useServices } from './hooks/useServices'
 import { useDeployState } from './hooks/useDeployState'
 import { useStats } from './hooks/useStats'
 import { useTokenStats } from './hooks/useTokenStats'
+import { useAiProjects } from './hooks/useAiProjects'
 import { StatsBar } from './components/StatsBar'
 import { ServiceList } from './components/ServiceList'
 import { DayProjectList } from './components/DayProjectList'
+import { AiProjectList } from './components/AiProjectList'
 import { EmptyState } from './components/EmptyState'
 import { OfflineRow } from './components/OfflineRow'
 import { GradientBackground } from './components/GradientBackground'
@@ -46,11 +48,23 @@ export default function App() {
         .map(s => ({ cwd: s.cwd as string, name: s.name })),
     [services]
   )
+  const runningCwds = useMemo(
+    () => projects.map(p => p.cwd),
+    [projects]
+  )
   const stats = useStats(projects)
   const tokenStats = useTokenStats()
+  const aiProjects = useAiProjects(runningCwds)
+
+  const sessionsByCwd = useMemo(() => {
+    const map = new Map<string, AiProject>()
+    for (const p of aiProjects) map.set(p.cwd, p)
+    return map
+  }, [aiProjects])
 
   const hasRunning = services.length > 0
   const hasOffline = offlineServices.length > 0
+  const hasAiOnly = aiProjects.some(p => !p.hasRunningServer)
 
   const toggleNotifications = async () => {
     const next = !notificationsEnabled
@@ -145,7 +159,7 @@ export default function App() {
           <div className="flex-1 overflow-y-auto show-scrollbar">
             {hoveredDay ? (
               <DayProjectList day={hoveredDay} search={search} />
-            ) : !hasRunning && !hasOffline && !isLoading ? (
+            ) : !hasRunning && !hasOffline && !hasAiOnly && !isLoading ? (
               <EmptyState />
             ) : (
               <div>
@@ -160,14 +174,17 @@ export default function App() {
                     onDeploy={deploy}
                     onSetLastDeploy={setLastDeploy}
                     onRefresh={refresh}
+                    sessionsByCwd={sessionsByCwd}
                   />
                 )}
+
+                <AiProjectList projects={aiProjects} search={search} hideRunning />
 
                 {hasOffline && (
                   <>
                     <div style={{
                       padding: '12px 16px 4px',
-                      borderTop: hasRunning ? '1px solid rgba(255,255,255,0.04)' : 'none'
+                      borderTop: hasRunning || hasAiOnly ? '1px solid rgba(255,255,255,0.04)' : 'none'
                     }}>
                       <span style={{ fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-muted-foreground)' }}>
                         Offline

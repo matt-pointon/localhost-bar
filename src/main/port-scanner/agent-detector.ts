@@ -1,7 +1,8 @@
 import { execSync } from 'child_process'
 import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
-import { homedir } from 'os'
+import { homedir, platform } from 'os'
+import { cwdMatches, getCursorUserDataPaths } from '../session-sources/path-utils'
 
 const cache = new Map<string, { agents: string[]; expiry: number }>()
 const TTL = 10_000
@@ -60,10 +61,18 @@ function readEditorOpenFolders(storagePath: string): string[] {
   }
 }
 
-function cwdMatches(projectCwd: string, procCwd: string): boolean {
-  const a = projectCwd.replace(/\/$/, '')
-  const b = procCwd.replace(/\/$/, '')
-  return b === a || b.startsWith(a + '/')
+function getWindsurfStoragePaths(): string[] {
+  const home = homedir()
+  const os = platform()
+  if (os === 'darwin') {
+    return [join(home, 'Library', 'Application Support', 'Windsurf', 'User', 'globalStorage', 'storage.json')]
+  }
+  if (os === 'win32') {
+    const appData = process.env.APPDATA
+    const base = appData ? join(appData, 'Windsurf') : join(home, 'AppData', 'Roaming', 'Windsurf')
+    return [join(base, 'User', 'globalStorage', 'storage.json')]
+  }
+  return [join(home, '.config', 'Windsurf', 'User', 'globalStorage', 'storage.json')]
 }
 
 export function getActiveAgents(cwd: string | null): string[] {
@@ -83,14 +92,17 @@ export function getActiveAgents(cwd: string | null): string[] {
     }
   }
 
-  const cursorStorage = join(homedir(), 'Library', 'Application Support', 'Cursor', 'User', 'globalStorage', 'storage.json')
-  const windsurfStorage = join(homedir(), 'Library', 'Application Support', 'Windsurf', 'User', 'globalStorage', 'storage.json')
-
-  for (const folder of readEditorOpenFolders(cursorStorage)) {
-    if (cwdMatches(cwd, folder) && !agents.includes('cursor')) agents.push('cursor')
+  for (const userPath of getCursorUserDataPaths()) {
+    const cursorStorage = join(userPath, 'globalStorage', 'storage.json')
+    for (const folder of readEditorOpenFolders(cursorStorage)) {
+      if (cwdMatches(cwd, folder) && !agents.includes('cursor')) agents.push('cursor')
+    }
   }
-  for (const folder of readEditorOpenFolders(windsurfStorage)) {
-    if (cwdMatches(cwd, folder) && !agents.includes('windsurf')) agents.push('windsurf')
+
+  for (const windsurfStorage of getWindsurfStoragePaths()) {
+    for (const folder of readEditorOpenFolders(windsurfStorage)) {
+      if (cwdMatches(cwd, folder) && !agents.includes('windsurf')) agents.push('windsurf')
+    }
   }
 
   cache.set(cwd, { agents, expiry: Date.now() + TTL })

@@ -9,6 +9,29 @@ import type { ServiceInfo } from '../hooks/useServices'
 import type { DetectedTool } from './QuickActionsMenu'
 import type { DeployTarget, DeployRecord, DeployState } from '../hooks/useDeployState'
 
+function findAiProjectForCwd(
+  cwd: string | null,
+  sessionsByCwd?: Map<string, AiProject>
+): AiProject | undefined {
+  if (!cwd || !sessionsByCwd) return undefined
+  const exact = sessionsByCwd.get(cwd)
+  if (exact) return exact
+  for (const [key, project] of sessionsByCwd) {
+    const a = cwd.replace(/\/$/, '')
+    const b = key.replace(/\/$/, '')
+    if (a === b || a.startsWith(b + '/') || b.startsWith(a + '/')) return project
+  }
+  return undefined
+}
+
+function relativeSessionTime(ts: number): string {
+  const diff = Date.now() - ts
+  if (diff < 60_000) return 'just now'
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`
+  return `${Math.floor(diff / 86_400_000)}d ago`
+}
+
 interface ServiceListProps {
   services: ServiceInfo[]
   search: string
@@ -19,11 +42,12 @@ interface ServiceListProps {
   onDeploy: (cwd: string, target: DeployTarget) => void
   onSetLastDeploy: (cwd: string, record: DeployRecord) => void
   onRefresh: () => void
+  sessionsByCwd?: Map<string, AiProject>
 }
 
 export function ServiceList({
   services, search, onOpen, onKill, availableTools,
-  deployStates, onDeploy, onSetLastDeploy, onRefresh
+  deployStates, onDeploy, onSetLastDeploy, onRefresh, sessionsByCwd
 }: ServiceListProps) {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -49,6 +73,7 @@ export function ServiceList({
           onDeploy={onDeploy}
           onSetLastDeploy={onSetLastDeploy}
           onRefresh={onRefresh}
+          aiProject={findAiProjectForCwd(service.cwd, sessionsByCwd)}
         />
       ))}
     </div>
@@ -57,7 +82,7 @@ export function ServiceList({
 
 function ServiceRow({
   service, onOpen, onKill, availableTools, deployState,
-  onDeploy, onSetLastDeploy, onRefresh
+  onDeploy, onSetLastDeploy, onRefresh, aiProject
 }: {
   service: ServiceInfo
   onOpen: (port: number) => void
@@ -67,6 +92,7 @@ function ServiceRow({
   onDeploy: (cwd: string, target: DeployTarget) => void
   onSetLastDeploy: (cwd: string, record: DeployRecord) => void
   onRefresh: () => void
+  aiProject?: AiProject
 }) {
   const [hovered, setHovered] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -204,6 +230,14 @@ function ServiceRow({
                   </span>
                 ))}
               </span>
+            )}
+            {aiProject && aiProject.sessions.length > 0 && (
+              <>
+                <MetaDot />
+                <span style={{ flexShrink: 0, opacity: 0.85 }}>
+                  {aiProject.sessions.length} AI · {relativeSessionTime(aiProject.lastActiveAt)}
+                </span>
+              </>
             )}
           </div>
         </div>

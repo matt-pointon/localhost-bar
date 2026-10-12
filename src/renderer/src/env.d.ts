@@ -110,6 +110,29 @@ interface TokenStats {
   claudeCode: { prompts: number; sessions: number } | null
 }
 
+type AiToolId = 'cursor' | 'claude' | 'codex'
+
+interface AiProjectSession {
+  tool: AiToolId
+  sessionId: string
+  cwd: string
+  title?: string
+  lastActiveAt: number
+  messageCount?: number
+  gitBranch?: string
+  isActive: boolean
+}
+
+interface AiProject {
+  cwd: string
+  name: string
+  tools: AiToolId[]
+  sessions: AiProjectSession[]
+  lastActiveAt: number
+  isActive: boolean
+  hasRunningServer: boolean
+}
+
 interface DeployProgress {
   cwd: string
   status: 'deploying' | 'success' | 'error'
@@ -143,6 +166,8 @@ interface ElectronAPI {
   gitGetInfo: (cwd: string) => Promise<{ ghInstalled: boolean; defaultBranch: string | null }>
   getDailyStats: (projects: ProjectRef[]) => Promise<DailyStats>
   getTokenStats: () => Promise<TokenStats>
+  getAiProjects: (runningCwds?: string[]) => Promise<AiProject[]>
+  resumeAiSession: (tool: AiToolId, sessionId: string, cwd: string) => Promise<{ success: boolean; error?: string }>
   shareStats: (height: number) => Promise<{ success: boolean; error?: string }>
   getTasks: (cwd: string) => Promise<Task[]>
   addTask: (cwd: string, text: string) => Promise<{ success: boolean; tasks?: Task[]; error?: string }>
