@@ -43,7 +43,7 @@ const menuItemStyle: React.CSSProperties = {
   borderRadius: 6,
   color: 'var(--color-foreground)',
   whiteSpace: 'nowrap',
-  transition: 'background 120ms ease'
+  transition: 'background var(--duration-fast) ease, color var(--duration-fast) ease'
 }
 
 const DEPLOY_LABELS: Record<DeployTarget, string> = {
@@ -220,9 +220,6 @@ export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSet
     }
   }
 
-  useEffect(() => {
-  }, [open])
-
   const run = (actionKey: string) => {
     window.electronAPI.openWith(actionKey, cwd)
     setOpen(false)
@@ -270,7 +267,7 @@ export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSet
           cursor: 'pointer',
           background: open ? 'var(--color-hover-overlay)' : 'transparent',
           color: open ? 'var(--color-foreground)' : 'var(--color-muted-foreground)',
-          transition: 'color 120ms ease, background 120ms ease'
+          transition: 'color var(--duration-fast) ease, background var(--duration-fast) ease, transform var(--duration-fast) ease'
         }}
         onMouseEnter={e => {
           ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-foreground)'
@@ -280,6 +277,14 @@ export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSet
           if (open) return
           ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-muted-foreground)'
           ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+          ;(e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'
+        }}
+        onMouseDown={e => {
+          ;(e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.94)'
+          ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--color-press-overlay)'
+        }}
+        onMouseUp={e => {
+          ;(e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'
         }}
       >
         <MoreHorizontal size={13} />
@@ -302,28 +307,24 @@ export function QuickActionsMenu({ cwd, tools, git, deployState, onDeploy, onSet
               width: 220,
               maxHeight: pos.maxH,
               overflowY: 'auto',
-              background: 'rgba(8, 8, 8, 0.88)',
-              backdropFilter: 'blur(60px) saturate(1.2)',
-              WebkitBackdropFilter: 'blur(60px) saturate(1.2)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'rgba(12, 16, 14, 0.94)',
+              backdropFilter: 'blur(48px) saturate(140%)',
+              WebkitBackdropFilter: 'blur(48px) saturate(140%)',
+              border: '1px solid rgba(255, 255, 255, 0.09)',
               borderRadius: 10,
-              boxShadow: '0 12px 40px rgba(0,0,0,0.7), 0 4px 12px rgba(0,0,0,0.5), inset 0 0.5px 0 rgba(255,255,255,0.06)',
+              boxShadow: '0 14px 44px rgba(0,0,0,0.55), 0 4px 14px rgba(0,0,0,0.4), inset 0 0.5px 0 rgba(255,255,255,0.1)',
               padding: '4px',
-              zIndex: 9999
+              zIndex: 9999,
+              animation: 'row-enter 160ms cubic-bezier(0.22, 1, 0.36, 1) both'
             }}
           >
             {/* Open in — label + tool list */}
             {tools.length > 0 && (
               <>
-                <div style={{
-                  padding: '4px 10px 2px',
-                  fontSize: 10,
-                  fontWeight: 600,
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                  color: 'var(--color-muted-foreground)',
-                  userSelect: 'none'
-                }}>
+                <div
+                  className="section-label"
+                  style={{ padding: '5px 10px 3px', userSelect: 'none' }}
+                >
                   Open in
                 </div>
                 {tools.map(tool => {

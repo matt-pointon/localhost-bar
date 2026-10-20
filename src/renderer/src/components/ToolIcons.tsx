@@ -10,14 +10,14 @@ const TOOL_LABELS: Record<string, string> = {
 }
 
 const TOOL_COLORS: Record<string, string> = {
-  cursor: 'oklch(0.65 0.12 250)',
-  claude: 'oklch(0.70 0.14 55)',
-  windsurf: 'oklch(0.65 0.14 200)',
-  copilot: 'oklch(0.60 0.10 280)',
-  codex: 'oklch(0.68 0.12 145)',
-  aider: 'oklch(0.62 0.14 25)',
-  bolt: 'oklch(0.72 0.15 85)',
-  lovable: 'oklch(0.65 0.16 330)'
+  cursor: 'oklch(0.72 0.08 230)',
+  claude: 'oklch(0.74 0.09 70)',
+  windsurf: 'oklch(0.72 0.08 200)',
+  copilot: 'oklch(0.70 0.06 250)',
+  codex: 'oklch(0.72 0.08 145)',
+  aider: 'oklch(0.70 0.08 30)',
+  bolt: 'oklch(0.74 0.08 90)',
+  lovable: 'oklch(0.72 0.08 340)'
 }
 
 interface ToolBadgeProps {
@@ -29,7 +29,7 @@ interface ToolBadgeProps {
 export function ToolBadge({ toolId, active, size = 'xs' }: ToolBadgeProps) {
   const label = TOOL_LABELS[toolId] ?? toolId
   const color = TOOL_COLORS[toolId] ?? 'var(--color-muted-foreground)'
-  const fontSize = size === 'sm' ? 8 : 7
+  const fontSize = size === 'sm' ? 8 : 7.5
   const padding = size === 'sm' ? '1px 5px' : '1px 4px'
 
   return (
@@ -37,15 +37,16 @@ export function ToolBadge({ toolId, active, size = 'xs' }: ToolBadgeProps) {
       title={active ? `${label} active` : label}
       style={{
         fontSize,
-        fontWeight: 600,
+        fontWeight: 560,
         letterSpacing: '0.02em',
         padding,
         borderRadius: 4,
-        background: active ? `${color}33` : 'rgba(255,255,255,0.06)',
+        background: active ? `${color}28` : 'var(--color-muted)',
         color: active ? color : 'var(--color-muted-foreground)',
-        border: active ? `1px solid ${color}55` : '1px solid transparent',
+        border: active ? `1px solid ${color}40` : '1px solid transparent',
         whiteSpace: 'nowrap',
-        flexShrink: 0
+        flexShrink: 0,
+        transition: 'background var(--duration-fast) ease, color var(--duration-fast) ease, border-color var(--duration-fast) ease'
       }}
     >
       {label}
@@ -58,15 +59,38 @@ interface ToolIconRowProps {
   activeAgents: string[]
 }
 
+const MAX_VISIBLE = 2
+
 export function ToolIconRow({ originTools, activeAgents }: ToolIconRowProps) {
+  // Active agents first so the most relevant badges stay visible
   const all = [...new Set([...activeAgents, ...originTools])]
   if (all.length === 0) return null
 
+  const visible = all.slice(0, MAX_VISIBLE)
+  const overflow = all.length - visible.length
+
   return (
     <span style={{ display: 'flex', gap: 3, alignItems: 'center', flexShrink: 0 }}>
-      {all.map(id => (
+      {visible.map(id => (
         <ToolBadge key={id} toolId={id} active={activeAgents.includes(id)} />
       ))}
+      {overflow > 0 && (
+        <span
+          title={all.slice(MAX_VISIBLE).map(id => TOOL_LABELS[id] ?? id).join(', ')}
+          style={{
+            fontSize: 7.5,
+            fontWeight: 560,
+            letterSpacing: '0.02em',
+            padding: '1px 4px',
+            borderRadius: 4,
+            background: 'var(--color-muted)',
+            color: 'var(--color-muted-foreground)',
+            flexShrink: 0
+          }}
+        >
+          +{overflow}
+        </span>
+      )}
     </span>
   )
 }

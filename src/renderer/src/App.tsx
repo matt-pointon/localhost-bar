@@ -15,6 +15,7 @@ import { SearchBar } from './components/SearchBar'
 import { SessionsPanel } from './sessions/SessionsPanel'
 import { localDateStr } from '../../shared/dates'
 import { X, Bell, BellOff } from 'lucide-react'
+import { IconButton } from './components/IconButton'
 import type { DetectedTool } from './components/QuickActionsMenu'
 
 export default function App() {
@@ -67,41 +68,19 @@ export default function App() {
   }
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        height: '100vh',
-        borderRadius: '14px',
-        overflow: 'hidden',
-        border: '1px solid rgba(255, 255, 255, 0.07)',
-        boxShadow: '0 0 0 1px rgba(0,0,0,0.5), 0 16px 48px rgba(0,0,0,0.6)'
-      }}
-    >
+    <div className="panel-shell">
       <GradientBackground />
 
       <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 20, display: 'flex', gap: 2 }}>
-        <button
-          className="no-drag"
-          onClick={toggleNotifications}
+        <IconButton
           title={notificationsEnabled ? 'Notifications on' : 'Notifications off'}
-          style={{
-            padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
-            cursor: 'pointer', color: 'var(--color-muted-foreground)', display: 'flex'
-          }}
+          onClick={() => { void toggleNotifications() }}
         >
           {notificationsEnabled ? <Bell size={12} /> : <BellOff size={12} />}
-        </button>
-        <button
-          className="no-drag"
-          onClick={() => window.electronAPI.quit()}
-          title="Quit"
-          style={{
-            padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
-            cursor: 'pointer', color: 'var(--color-muted-foreground)', display: 'flex'
-          }}
-        >
+        </IconButton>
+        <IconButton title="Quit" onClick={() => window.electronAPI.quit()} variant="destructive">
           <X size={12} />
-        </button>
+        </IconButton>
       </div>
 
       <div
@@ -109,7 +88,7 @@ export default function App() {
           position: 'relative',
           zIndex: 1,
           height: '100%',
-          background: 'rgba(6, 9, 7, 0.88)',
+          background: 'var(--color-surface)',
           display: 'flex'
         }}
       >
@@ -144,7 +123,15 @@ export default function App() {
           />
         </div>
 
-        <div style={{ width: 1, height: '60%', background: 'rgba(255,255,255,0.06)', flexShrink: 0, alignSelf: 'center' }} />
+        <div
+          style={{
+            width: 1,
+            flexShrink: 0,
+            alignSelf: 'stretch',
+            margin: '12px 0',
+            background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.07) 20%, rgba(255,255,255,0.07) 80%, transparent)'
+          }}
+        />
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100%' }}>
           <div className="drag-region" style={{
@@ -153,11 +140,7 @@ export default function App() {
             alignItems: 'center',
             minHeight: 28
           }}>
-            <span style={{
-              fontSize: 10, fontWeight: 500, textTransform: 'uppercase',
-              letterSpacing: '0.05em', color: 'var(--color-muted-foreground)',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-            }}>
+            <span className="section-label">
               {hoveredDay
                 ? `${formatDayLabel(hoveredDay.date)} · ${hoveredDay.commits} commit${hoveredDay.commits !== 1 ? 's' : ''} · ${fmtLines(hoveredDay.lines)} lines`
                 : `${services.length} Project${services.length !== 1 ? 's' : ''} Running`}
@@ -190,13 +173,8 @@ export default function App() {
 
                 {hasOffline && (
                   <>
-                    <div style={{
-                      padding: '12px 16px 4px',
-                      borderTop: hasRunning ? '1px solid rgba(255,255,255,0.04)' : 'none'
-                    }}>
-                      <span style={{ fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-muted-foreground)' }}>
-                        Offline
-                      </span>
+                    <div style={{ padding: hasRunning ? '16px 16px 4px' : '12px 16px 4px' }}>
+                      <span className="section-label">Offline</span>
                     </div>
                     <div style={{ padding: '0 0 8px' }}>
                       {offlineServices.map(service => (

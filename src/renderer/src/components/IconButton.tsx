@@ -16,7 +16,7 @@ const SIZE = 24
 /**
  * Shared hover icon button used across service / offline rows and the
  * quick-actions trigger. Keeps hit area, radius, and hover treatment
- * consistent for a calm shadcn-style action cluster.
+ * consistent for a calm action cluster.
  */
 export function IconButton({
   title,
@@ -29,6 +29,7 @@ export function IconButton({
   const restColor = active ? 'var(--color-warning)' : 'var(--color-muted-foreground)'
   const hoverColor = variant === 'destructive' ? 'var(--color-destructive)' : 'var(--color-foreground)'
   const hoverBg = variant === 'destructive' ? 'var(--color-destructive-overlay)' : 'var(--color-hover-overlay)'
+  const pressBg = variant === 'destructive' ? 'var(--color-destructive-overlay)' : 'var(--color-press-overlay)'
 
   const base: CSSProperties = {
     width: SIZE,
@@ -44,7 +45,7 @@ export function IconButton({
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    transition: 'color 120ms ease, background 120ms ease'
+    transition: 'color var(--duration-fast) ease, background var(--duration-fast) ease, transform var(--duration-fast) ease'
   }
 
   return (
@@ -65,6 +66,17 @@ export function IconButton({
       onMouseLeave={e => {
         e.currentTarget.style.color = restColor
         e.currentTarget.style.background = 'transparent'
+        e.currentTarget.style.transform = 'scale(1)'
+      }}
+      onMouseDown={e => {
+        if (disabled) return
+        e.currentTarget.style.background = pressBg
+        e.currentTarget.style.transform = 'scale(0.94)'
+      }}
+      onMouseUp={e => {
+        if (disabled) return
+        e.currentTarget.style.background = hoverBg
+        e.currentTarget.style.transform = 'scale(1)'
       }}
     >
       {children}

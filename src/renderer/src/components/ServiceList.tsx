@@ -37,7 +37,7 @@ export function ServiceList({
   }, [services, search])
 
   return (
-    <div style={{ padding: '4px 0' }}>
+    <div style={{ padding: '2px 0 4px' }}>
       {filtered.map(service => (
         <ServiceRow
           key={`${service.pid}-${service.port}`}
@@ -69,6 +69,7 @@ function ServiceRow({
   onRefresh: () => void
 }) {
   const [hovered, setHovered] = useState(false)
+  const [pressed, setPressed] = useState(false)
   const [copied, setCopied] = useState(false)
   const [renaming, setRenaming] = useState(false)
   const [renameVal, setRenameVal] = useState(service.name)
@@ -96,12 +97,20 @@ function ServiceRow({
     onRefresh()
   }
 
+  const rowBg = pressed
+    ? 'var(--color-press-overlay)'
+    : hovered
+      ? 'var(--color-hover-overlay)'
+      : 'transparent'
+
   return (
     <div>
       <div
         className={service.status === 'exiting' ? 'row-exit' : 'row-enter'}
         onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseLeave={() => { setHovered(false); setPressed(false) }}
+        onMouseDown={() => { if (!isStopping && !renaming) setPressed(true) }}
+        onMouseUp={() => setPressed(false)}
         onClick={() => !isStopping && !renaming && onOpen(service.port)}
         style={{
           position: 'relative',
@@ -110,26 +119,26 @@ function ServiceRow({
           alignItems: 'center',
           gap: 9,
           cursor: isStopping ? 'not-allowed' : 'pointer',
-          background: hovered ? 'var(--color-hover-overlay)' : 'transparent',
-          transition: 'background 120ms ease',
-          opacity: isStopping ? 0.4 : 1,
+          background: rowBg,
+          transition: 'background var(--duration-fast) ease',
+          opacity: isStopping ? 0.55 : 1,
           borderRadius: 8,
-          margin: '0 6px'
+          margin: '0 8px'
         }}
       >
         <span
-          className={isStopping ? 'animate-pulse' : ''}
+          className={isStopping ? 'animate-pulse' : 'status-dot-live'}
           style={{
-            width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+            width: 6.5, height: 6.5, borderRadius: '50%', flexShrink: 0,
             background: isStopping ? 'var(--color-status-stopping)' : 'var(--color-status-running)',
-            boxShadow: isStopping ? 'none' : '0 0 6px -1px var(--color-status-running)'
+            boxShadow: isStopping ? 'none' : '0 0 5px -1px var(--color-status-running)'
           }}
         />
 
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0, opacity: isStopping ? 0.75 : 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
             {service.pinned && !renaming && (
-              <Pin size={9} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
+              <Pin size={9} style={{ color: 'var(--color-warning)', flexShrink: 0, opacity: 0.9 }} />
             )}
             {renaming ? (
               <input
@@ -145,15 +154,16 @@ function ServiceRow({
                 autoFocus
                 style={{
                   fontSize: 12.5, fontWeight: 600, flex: 1, minWidth: 0,
-                  background: 'var(--color-input-bg)', border: '1px solid var(--color-border)',
-                  borderRadius: 5, padding: '1px 5px', color: 'var(--color-foreground)', outline: 'none'
+                  background: 'var(--color-input-bg)', border: '1px solid rgba(255,255,255,0.14)',
+                  borderRadius: 5, padding: '2px 6px', color: 'var(--color-foreground)', outline: 'none',
+                  boxShadow: '0 0 0 2px rgba(255,255,255,0.04)'
                 }}
               />
             ) : (
               <div style={{
                 fontSize: 12.5, fontWeight: 600, color: 'var(--color-foreground)',
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                lineHeight: 1.35, letterSpacing: '-0.01em', flexShrink: 1, minWidth: 0
+                lineHeight: 1.35, letterSpacing: '-0.015em', flexShrink: 1, minWidth: 0
               }}>
                 {service.name}
               </div>
@@ -166,7 +176,7 @@ function ServiceRow({
             display: 'flex', gap: 6, alignItems: 'center', marginTop: 2,
             whiteSpace: 'nowrap', overflow: 'hidden'
           }}>
-            <span style={{ fontFamily: 'ui-monospace, monospace', flexShrink: 0, opacity: 0.85 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', flexShrink: 0, opacity: 0.9, fontSize: 10 }}>
               :{service.port}
             </span>
             {service.git && (
@@ -193,10 +203,10 @@ function ServiceRow({
               </>
             )}
             {service.stackTags.length > 0 && (
-              <span style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 1 }}>
-                {service.stackTags.map(tag => (
+              <span style={{ display: 'flex', gap: 3, flexShrink: 0, marginLeft: 1 }}>
+                {service.stackTags.slice(0, 2).map(tag => (
                   <span key={tag} style={{
-                    fontSize: 9, lineHeight: 1.5, padding: '0 5px', borderRadius: 4,
+                    fontSize: 9, lineHeight: 1.45, padding: '0 5px', borderRadius: 4,
                     background: 'var(--color-muted)', border: '1px solid var(--color-border)',
                     color: 'var(--color-muted-foreground)', fontWeight: 500
                   }}>
@@ -208,8 +218,7 @@ function ServiceRow({
           </div>
         </div>
 
-        {/* Hover action cluster — absolute overlay so it never reserves width
-            nor overlaps the title/meta text underneath */}
+        {/* Hover action cluster — absolute overlay so it never reserves width */}
         <div
           onClick={e => e.stopPropagation()}
           style={{
@@ -223,13 +232,13 @@ function ServiceRow({
             paddingLeft: 34,
             opacity: hovered && !renaming ? 1 : 0,
             pointerEvents: hovered && !renaming ? 'auto' : 'none',
-            transition: 'opacity 120ms ease',
-            background: 'linear-gradient(to right, rgba(15,19,16,0) 0%, rgb(15,19,16) 38px)',
+            transition: 'opacity var(--duration-fast) ease',
+            background: 'linear-gradient(to right, transparent 0%, var(--color-row-fade) 36px)',
             borderRadius: 8
           }}
         >
           <IconButton title={copied ? 'Copied!' : 'Copy URL'} onClick={copyUrl}>
-            {copied ? <Check size={13} style={{ color: 'var(--color-success)' }} /> : <Copy size={13} />}
+            {copied ? <Check size={13} className="check-pop" style={{ color: 'var(--color-success)' }} /> : <Copy size={13} />}
           </IconButton>
           {service.cwd && (
             <IconButton title="Rename" onClick={e => { e.stopPropagation(); setRenaming(true); setRenameVal(service.name) }}>
@@ -259,7 +268,7 @@ function ServiceRow({
           <IconButton title="Open" onClick={() => onOpen(service.port)}>
             <ExternalLink size={13} />
           </IconButton>
-          <span style={{ width: 1, height: 16, background: 'var(--color-border)', margin: '0 2px', flexShrink: 0 }} />
+          <span style={{ width: 1, height: 14, background: 'var(--color-border)', margin: '0 2px', flexShrink: 0 }} />
           <IconButton title="Stop" onClick={() => onKill(service.pid)} disabled={isStopping} variant="destructive">
             <Square size={13} />
           </IconButton>
@@ -280,5 +289,5 @@ function ServiceRow({
 }
 
 function MetaDot() {
-  return <span style={{ opacity: 0.35, flexShrink: 0 }}>·</span>
+  return <span style={{ opacity: 0.3, flexShrink: 0 }}>·</span>
 }

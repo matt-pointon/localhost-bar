@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { Share, Check, Layers, ChevronRight } from 'lucide-react'
+import { IconButton } from './IconButton'
 import { localDateStr, localDateStrOffset } from '../../../shared/dates'
 
 function fmt(n: number): string {
@@ -88,9 +89,9 @@ export function StatsBar({ stats, tokenStats, sessions, serviceCount, isLoading,
         className="no-drag"
         style={{ position: 'absolute', top: 12, right: 16, display: 'flex', gap: 2 }}
       >
-        <HeaderBtn title={shared ? 'Copied!' : 'Share stats'} onClick={handleShare}>
-          {shared ? <Check size={12} style={{ color: 'var(--color-success)' }} /> : <Share size={12} />}
-        </HeaderBtn>
+        <IconButton title={shared ? 'Copied!' : 'Share stats'} onClick={() => { void handleShare() }}>
+          {shared ? <Check size={12} className="check-pop" style={{ color: 'var(--color-success)' }} /> : <Share size={12} />}
+        </IconButton>
       </div>
 
       <div style={{ marginBottom: 6 }}>
@@ -186,9 +187,10 @@ function SessionsTile({
       <span style={{ flex: 1 }} />
       <span
         style={{
-          fontFamily: "'Poppins', sans-serif",
-          fontWeight: 800,
+          fontFamily: 'var(--font-sans)',
+          fontWeight: 600,
           fontSize: 13,
+          fontVariantNumeric: 'tabular-nums',
           color: 'var(--color-foreground)',
           letterSpacing: '-0.02em',
           whiteSpace: 'nowrap'
@@ -198,7 +200,7 @@ function SessionsTile({
         {!loading && count > 0 && (
           <span
             style={{
-              fontFamily: "'Inter', sans-serif",
+              fontFamily: 'var(--font-sans)',
               fontWeight: 500,
               fontSize: 10,
               color: 'var(--color-muted-foreground)',
@@ -218,8 +220,11 @@ function StatNumber({ value, label, color }: { value: string; label: string; col
   return (
     <div>
       <div style={{
-        fontFamily: "'Poppins', sans-serif",
-        fontWeight: 800, fontSize: 18, lineHeight: 1.1,
+        fontFamily: 'var(--font-sans)',
+        fontWeight: 600,
+        fontSize: 17,
+        lineHeight: 1.1,
+        fontVariantNumeric: 'tabular-nums',
         color: color ?? 'var(--color-foreground)',
         letterSpacing: '-0.02em'
       }}>
@@ -229,24 +234,6 @@ function StatNumber({ value, label, color }: { value: string; label: string; col
         {label}
       </div>
     </div>
-  )
-}
-
-function HeaderBtn({ title, onClick, children }: { title: string; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className="no-drag"
-      style={{
-        padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
-        cursor: 'pointer', color: 'var(--color-muted-foreground)', display: 'flex', alignItems: 'center'
-      }}
-      onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-hover-overlay)'; e.currentTarget.style.color = 'var(--color-foreground)' }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-muted-foreground)' }}
-    >
-      {children}
-    </button>
   )
 }
 
@@ -328,11 +315,11 @@ function ActivityGrid({
   const COLS = 6
 
   const colors = [
-    'rgba(255, 255, 255, 0.04)',
-    'rgba(80, 160, 90, 0.35)',
-    'rgba(80, 170, 90, 0.55)',
-    'rgba(70, 190, 85, 0.75)',
-    'oklch(0.70 0.17 145)'
+    'rgba(255, 255, 255, 0.03)',
+    'rgba(80, 160, 90, 0.28)',
+    'rgba(80, 170, 90, 0.48)',
+    'rgba(70, 190, 85, 0.65)',
+    'oklch(0.70 0.15 145)'
   ]
 
   const toDayActivity = (day: GridDay): DayActivity => ({
@@ -364,15 +351,21 @@ function ActivityGrid({
           return (
             <div
               key={day.date}
-              onMouseEnter={() => onHoverDay(toDayActivity(day))}
-              onMouseLeave={() => onHoverDay(null)}
+              onMouseEnter={e => {
+                onHoverDay(toDayActivity(day))
+                if (hasActivity) e.currentTarget.style.transform = 'scale(1.06)'
+              }}
+              onMouseLeave={e => {
+                onHoverDay(null)
+                e.currentTarget.style.transform = 'scale(1)'
+              }}
               onClick={() => toggleSelect(day)}
               style={{
                 aspectRatio: '1',
                 borderRadius: 4,
                 background: colors[day.level],
                 border: showBorder ? `1px solid ${borderColor}` : '1px solid transparent',
-                transition: 'border 100ms, background 300ms',
+                transition: 'border var(--duration-fast) ease, background 300ms ease, transform var(--duration-fast) var(--ease-out)',
                 cursor: hasActivity ? 'pointer' : 'default'
               }}
             />
