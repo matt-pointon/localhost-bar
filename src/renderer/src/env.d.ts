@@ -161,7 +161,6 @@ interface ElectronAPI {
   getDailyStats: (projects: ProjectRef[]) => Promise<DailyStats>
   getTokenStats: () => Promise<TokenStats>
   getSessions: () => Promise<AgentSession[]>
-  openSessionsWindow: () => Promise<{ success: boolean }>
   shareStats: (height: number) => Promise<{ success: boolean; error?: string }>
   getTasks: (cwd: string) => Promise<Task[]>
   addTask: (cwd: string, text: string) => Promise<{ success: boolean; tasks?: Task[]; error?: string }>

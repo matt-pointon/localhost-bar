@@ -11,6 +11,7 @@ import { OfflineRow } from './components/OfflineRow'
 import { GradientBackground } from './components/GradientBackground'
 import { PortConflictBanner } from './components/PortConflictBanner'
 import { SearchBar } from './components/SearchBar'
+import { SessionsPanel } from './sessions/SessionsPanel'
 import { localDateStr } from '../../shared/dates'
 import { X, Bell, BellOff, Layers } from 'lucide-react'
 import type { DetectedTool } from './components/QuickActionsMenu'
@@ -20,6 +21,7 @@ export default function App() {
   const [search, setSearch] = useState('')
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const [hoveredDay, setHoveredDay] = useState<DayActivity | null>(null)
+  const [view, setView] = useState<'home' | 'sessions'>('home')
   const { states: deployStates, deploy, setLastDeploy } = useDeployState()
 
   useEffect(() => {
@@ -74,11 +76,14 @@ export default function App() {
       <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 20, display: 'flex', gap: 2 }}>
         <button
           className="no-drag"
-          onClick={() => window.electronAPI.openSessionsWindow()}
+          onClick={() => setView(v => (v === 'sessions' ? 'home' : 'sessions'))}
           title="Agent sessions"
           style={{
-            padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
-            cursor: 'pointer', color: 'var(--color-muted-foreground)', display: 'flex'
+            padding: 4, borderRadius: 6, border: 'none',
+            background: view === 'sessions' ? 'var(--color-accent)' : 'transparent',
+            cursor: 'pointer',
+            color: view === 'sessions' ? 'var(--color-foreground)' : 'var(--color-muted-foreground)',
+            display: 'flex'
           }}
         >
           <Layers size={12} />
@@ -116,6 +121,10 @@ export default function App() {
           display: 'flex'
         }}
       >
+        {view === 'sessions' ? (
+          <SessionsPanel onBack={() => setView('home')} />
+        ) : (
+        <>
         <div
           className="drag-region"
           style={{ width: '44%', overflow: 'hidden', flexShrink: 0, alignSelf: 'stretch' }}
@@ -200,6 +209,8 @@ export default function App() {
             )}
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   )

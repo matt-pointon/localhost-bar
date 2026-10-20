@@ -13,7 +13,6 @@ import { getDailyStats } from './stats/collector'
 import type { ProjectRef } from './stats/collector'
 import { getTokenStats } from './token-stats'
 import { getAgentSessions } from './sessions'
-import { openSessionsWindow } from './sessions-window'
 import { getSettings, setSettings, togglePin, setRename } from './settings'
 import { setNotificationsEnabled } from './notifications'
 import { getTasks, addTask, toggleTask, removeTask } from './tasks/store'
@@ -206,11 +205,6 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('sessions:get', () => {
     return getAgentSessions()
-  })
-
-  ipcMain.handle('sessions:open-window', () => {
-    openSessionsWindow()
-    return { success: true }
   })
 
   ipcMain.handle('stats:share', async (event, { height }: { height: number }) => {
