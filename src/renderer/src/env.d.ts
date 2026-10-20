@@ -110,6 +110,23 @@ interface TokenStats {
   claudeCode: { prompts: number; sessions: number } | null
 }
 
+interface AgentSession {
+  id: string
+  source: string
+  sourceLabel: string
+  project: string | null
+  cwd: string | null
+  model: string | null
+  providerSlug: string
+  providerName: string
+  lastRequest: number
+  requests: number
+  inputTokens: number
+  outputTokens: number
+  totalTokens: number
+  estimatedCost: number | null
+}
+
 interface DeployProgress {
   cwd: string
   status: 'deploying' | 'success' | 'error'
@@ -143,6 +160,8 @@ interface ElectronAPI {
   gitGetInfo: (cwd: string) => Promise<{ ghInstalled: boolean; defaultBranch: string | null }>
   getDailyStats: (projects: ProjectRef[]) => Promise<DailyStats>
   getTokenStats: () => Promise<TokenStats>
+  getSessions: () => Promise<AgentSession[]>
+  openSessionsWindow: () => Promise<{ success: boolean }>
   shareStats: (height: number) => Promise<{ success: boolean; error?: string }>
   getTasks: (cwd: string) => Promise<Task[]>
   addTask: (cwd: string, text: string) => Promise<{ success: boolean; tasks?: Task[]; error?: string }>
