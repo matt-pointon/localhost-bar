@@ -12,7 +12,7 @@ import { GradientBackground } from './components/GradientBackground'
 import { PortConflictBanner } from './components/PortConflictBanner'
 import { SearchBar } from './components/SearchBar'
 import { localDateStr } from '../../shared/dates'
-import { X, Bell, BellOff } from 'lucide-react'
+import { X, Bell, BellOff, Layers } from 'lucide-react'
 import type { DetectedTool } from './components/QuickActionsMenu'
 
 export default function App() {
@@ -72,6 +72,17 @@ export default function App() {
       <GradientBackground />
 
       <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 20, display: 'flex', gap: 2 }}>
+        <button
+          className="no-drag"
+          onClick={() => window.electronAPI.openSessionsWindow()}
+          title="Agent sessions"
+          style={{
+            padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
+            cursor: 'pointer', color: 'var(--color-muted-foreground)', display: 'flex'
+          }}
+        >
+          <Layers size={12} />
+        </button>
         <button
           className="no-drag"
           onClick={toggleNotifications}

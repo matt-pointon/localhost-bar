@@ -53,6 +53,8 @@ src/
     deploy/                         # Vercel / Railway / Netlify integration
     stats/                          # Daily commits/lines/streak
     token-stats/                    # Cursor, Claude Desktop, Claude Code usage
+    sessions/                       # Unified agent sessions (Claude Code, Codex) + cost estimate
+    sessions-window.ts              # Larger "Agent Sessions" window (renderer #sessions route)
   preload/index.ts                  # contextBridge API
   renderer/src/
     App.tsx                         # Panel layout: stats + project list
