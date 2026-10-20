@@ -23,9 +23,9 @@ struct GetServerCountIntent: AppIntent {
     static var description = IntentDescription("Returns the number of currently running development servers.")
     
     func perform() async throws -> some IntentResult & ReturnsValue<Int> {
-        let scanner = await MainActor.run { PortScanner() }
-        // In production, we'd use a shared service
-        return .result(value: 0)
+        await PortScanner.shared.scan()
+        let count = await MainActor.run { PortScanner.shared.services.count }
+        return .result(value: count)
     }
 }
 
@@ -38,10 +38,21 @@ struct KillServerIntent: AppIntent {
     @Parameter(title: "Port", description: "The port number of the server to stop")
     var port: Int
     
-    func perform() async throws -> some IntentResult {
-        // Kill the process on the specified port
-        // This would use the PortScanner to find and kill the process
-        return .result()
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let port = port
+        await PortScanner.shared.scan()
+        let name = await MainActor.run { () -> String? in
+            let scanner = PortScanner.shared
+            guard let service = scanner.services.first(where: { $0.port == port || $0.otherPorts.contains(port) }) else {
+                return nil
+            }
+            scanner.stop(service)
+            return service.name
+        }
+        if let name {
+            return .result(dialog: "Stopped \(name).")
+        }
+        return .result(dialog: "Nothing is running on port \(port).")
     }
 }
 
@@ -56,7 +67,7 @@ struct OpenServerIntent: AppIntent {
     
     func perform() async throws -> some IntentResult {
         if let url = URL(string: "http://localhost:\(port)") {
-            await MainActor.run {
+            _ = await MainActor.run {
                 NSWorkspace.shared.open(url)
             }
         }

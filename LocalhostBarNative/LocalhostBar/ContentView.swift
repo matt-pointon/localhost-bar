@@ -1,157 +1,147 @@
 import SwiftUI
+import ServiceManagement
 
+/// The menu bar panel: servers first, a quiet activity strip underneath.
 struct ContentView: View {
-    @EnvironmentObject var portScanner: PortScanner
-    @EnvironmentObject var toolRegistry: ToolRegistry
-    @State private var hoveredServiceId: String?
-    @State private var hoveredDay: DayActivity?
-    
+    @EnvironmentObject private var scanner: PortScanner
+    @EnvironmentObject private var tools: ToolRegistry
+    @EnvironmentObject private var stats: StatsModel
+
     var body: some View {
-        HStack(spacing: 0) {
-            // Left: Stats panel
-            StatsView(services: portScanner.services, hoveredDay: $hoveredDay)
-                .frame(width: 220)
-            
-            // Divider
-            Rectangle()
-                .fill(Color.white.opacity(0.06))
-                .frame(width: 1)
-                .padding(.vertical, 40)
-            
-            // Right: Service list
-            VStack(alignment: .leading, spacing: 0) {
-                // Header
-                HStack {
-                    Text(headerTitle)
-                        .font(.system(size: 10, weight: .medium))
-                        .textCase(.uppercase)
-                        .tracking(0.5)
-                        .foregroundStyle(.secondary)
-                    
-                    Spacer()
-                    
-                    Button {
-                        NSApp.terminate(nil)
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Quit Localhost Bar")
+        VStack(spacing: 0) {
+            header
+            content
+            Divider()
+                .padding(.horizontal, Theme.inset)
+            ActivityFooter(stats: stats.stats)
+        }
+        .frame(width: Theme.panelWidth)
+        .background { keyboardShortcuts }
+        .onAppear {
+            tools.detect()
+            stats.refreshIfStale()
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: 8) {
+            Text("Localhost")
+                .font(.system(size: 13, weight: .semibold))
+            Spacer()
+            PanelMenu()
+        }
+        .padding(.leading, Theme.inset)
+        .padding(.trailing, 8)
+        .frame(height: 40)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if !scanner.hasScanned {
+            PanelMessage(title: "Looking for servers…")
+        } else if scanner.scanFailed {
+            PanelMessage(
+                title: "Couldn’t read open ports",
+                detail: "lsof didn’t respond. This usually clears up on the next scan.",
+                actionTitle: "Try Again",
+                action: { Task { await scanner.scan() } }
+            )
+        } else if scanner.services.isEmpty && scanner.offlineServices.isEmpty {
+            EmptyStateView()
+        } else {
+            list
+        }
+    }
+
+    private var list: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(scanner.services) { service in
+                    ServiceRowView(service: service)
+                        .transition(.opacity)
                 }
-                .padding(.horizontal, 14)
-                .padding(.top, 10)
-                .padding(.bottom, 4)
-                
-                // Service list, day history, or empty state
-                if let hoveredDay {
-                    DayProjectListView(day: hoveredDay)
-                } else if portScanner.services.isEmpty && !portScanner.isScanning {
-                    EmptyStateView()
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 0) {
-                            ForEach(portScanner.services) { service in
-                                ServiceRowView(
-                                    service: service,
-                                    isHovered: hoveredServiceId == service.id,
-                                    tools: toolRegistry.availableTools,
-                                    onOpen: { openInBrowser(port: service.port) },
-                                    onOpenFolder: { openInFinder(path: service.cwd) },
-                                    onKill: { portScanner.killProcess(pid: service.pid) },
-                                    onOpenWith: { tool in openWith(tool: tool, cwd: service.cwd) }
-                                )
-                                .onHover { isHovered in
-                                    hoveredServiceId = isHovered ? service.id : nil
-                                }
-                            }
-                        }
-                        .padding(.vertical, 6)
-                    }
-                }
-                
-                // Offline services section
-                if !portScanner.offlineServices.isEmpty {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text("Offline")
-                            .font(.system(size: 10, weight: .medium))
-                            .textCase(.uppercase)
-                            .tracking(0.5)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                        
-                        ForEach(portScanner.offlineServices) { service in
-                            OfflineServiceRow(
-                                service: service,
-                                onRestart: { portScanner.restartService(service) },
-                                onDismiss: { portScanner.dismissOffline(service) }
-                            )
-                        }
-                    }
-                    .padding(.top, 8)
-                    .overlay(alignment: .top) {
-                        Rectangle()
-                            .fill(Color.white.opacity(0.04))
-                            .frame(height: 1)
+                if !scanner.offlineServices.isEmpty {
+                    SectionLabel(text: "Stopped")
+                    ForEach(scanner.offlineServices) { service in
+                        OfflineRowView(service: service)
+                            .transition(.opacity)
                     }
                 }
             }
-            .frame(minWidth: 280)
+            .padding(.horizontal, 6)
+            .padding(.bottom, 6)
+            .animation(Theme.snappy, value: scanner.services.map(\.id))
+            .animation(Theme.snappy, value: scanner.offlineServices.map(\.id))
         }
-        .frame(width: 560, height: 290)
-        .background(.ultraThinMaterial)
-        .onAppear {
-            portScanner.startScanning()
-            toolRegistry.detectTools()
-        }
-    }
-    
-    private var headerTitle: String {
-        if let hoveredDay {
-            let count = hoveredDay.projects.count
-            let label = formatDayLabel(hoveredDay.date)
-            return "\(count) Project\(count == 1 ? "" : "s") · \(label)"
-        }
-        let count = portScanner.services.count
-        return "\(count) Project\(count == 1 ? "" : "s") Running"
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(height: listHeight)
     }
 
-    private func formatDayLabel(_ dateStr: String) -> String {
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar.current
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd"
-        let today = formatter.string(from: Date())
-        if dateStr == today { return "Today" }
-
-        guard let date = formatter.date(from: dateStr) else { return dateStr }
-        let display = DateFormatter()
-        display.dateFormat = "E, MMM d"
-        return display.string(from: date)
+    /// The panel sizes to its content; past ~7 rows the list scrolls instead.
+    private var listHeight: CGFloat {
+        let running = CGFloat(scanner.services.count) * Theme.rowHeight
+        let offline = scanner.offlineServices.isEmpty
+            ? 0
+            : Theme.sectionHeight + CGFloat(scanner.offlineServices.count) * Theme.rowHeight
+        return min(running + offline + 6, Theme.maxListHeight)
     }
 
-    private func openInBrowser(port: Int) {
-        if let url = URL(string: "http://localhost:\(port)") {
-            NSWorkspace.shared.open(url)
+    /// ⌘R and ⌘Q work whenever the panel is open, not just inside the ⋯ menu.
+    private var keyboardShortcuts: some View {
+        ZStack {
+            Button("Refresh") { Task { await scanner.scan() } }
+                .keyboardShortcut("r")
+            Button("Quit") { NSApp.terminate(nil) }
+                .keyboardShortcut("q")
         }
+        .opacity(0)
+        .frame(width: 0, height: 0)
+        .accessibilityHidden(true)
     }
-    
-    private func openInFinder(path: String?) {
-        guard let path = path else { return }
-        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: path)
+}
+
+/// Settings live here instead of a separate window a menu bar app can't easily open.
+struct PanelMenu: View {
+    @EnvironmentObject private var scanner: PortScanner
+    @State private var opensAtLogin = SMAppService.mainApp.status == .enabled
+
+    var body: some View {
+        Menu {
+            Button("Refresh") { Task { await scanner.scan() } }
+            Toggle("Open at Login", isOn: Binding(get: { opensAtLogin }, set: setOpensAtLogin))
+            Divider()
+            Button("Quit Localhost Bar") { NSApp.terminate(nil) }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(width: 26, height: 26)
+                .contentShape(Rectangle())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("More")
+        .accessibilityLabel("More")
     }
-    
-    private func openWith(tool: DetectedTool, cwd: String?) {
-        guard let cwd = cwd else { return }
-        toolRegistry.recordUsage(tool.id)
-        ToolLauncher.open(tool: tool, at: cwd)
+
+    private func setOpensAtLogin(_ enabled: Bool) {
+        do {
+            if enabled {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+        } catch {
+            // Fall through: reflect whatever macOS actually did.
+        }
+        opensAtLogin = SMAppService.mainApp.status == .enabled
     }
 }
 
 #Preview {
     ContentView()
-        .environmentObject(PortScanner())
+        .environmentObject(PortScanner.shared)
         .environmentObject(ToolRegistry())
+        .environmentObject(StatsModel())
 }
