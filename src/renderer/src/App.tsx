@@ -78,7 +78,7 @@ export default function App() {
         >
           {notificationsEnabled ? <Bell size={12} /> : <BellOff size={12} />}
         </IconButton>
-        <IconButton title="Quit" onClick={() => window.electronAPI.quit()}>
+        <IconButton title="Quit" onClick={() => window.electronAPI.quit()} variant="destructive">
           <X size={12} />
         </IconButton>
       </div>

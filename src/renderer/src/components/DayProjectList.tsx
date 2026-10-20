@@ -1,6 +1,5 @@
-import { GitCommit } from 'lucide-react'
 import { useState } from 'react'
-import { Folder } from 'lucide-react'
+import { Folder, GitCommit } from 'lucide-react'
 import { IconButton } from './IconButton'
 
 function fmt(n: number): string {
