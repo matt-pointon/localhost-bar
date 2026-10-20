@@ -33,7 +33,7 @@ export function EmptyState() {
             marginBottom: 0
           }}
         >
-          Start a dev server and it will appear here
+          Listening on ports 1024–9999 (node, bun, vite, etc.) show up here
         </p>
       </div>
     </div>

@@ -60,6 +60,11 @@ export default function App() {
 
   const hasRunning = services.length > 0
   const hasOffline = offlineServices.length > 0
+  // Only swap the right pane to day projects when that day has something to show.
+  // Hovering an empty calendar cell used to replace running localhost rows with
+  // "No project activity on this day" — looking like servers weren't detected.
+  const dayProjectView =
+    hoveredDay !== null && hoveredDay.projects.length > 0 ? hoveredDay : null
 
   const toggleNotifications = async () => {
     const next = !notificationsEnabled
@@ -141,18 +146,18 @@ export default function App() {
             minHeight: 28
           }}>
             <span className="section-label">
-              {hoveredDay
-                ? `${formatDayLabel(hoveredDay.date)} · ${hoveredDay.commits} commit${hoveredDay.commits !== 1 ? 's' : ''} · ${fmtLines(hoveredDay.lines)} lines`
+              {dayProjectView
+                ? `${formatDayLabel(dayProjectView.date)} · ${dayProjectView.commits} commit${dayProjectView.commits !== 1 ? 's' : ''} · ${fmtLines(dayProjectView.lines)} lines`
                 : `${services.length} Project${services.length !== 1 ? 's' : ''} Running`}
             </span>
           </div>
 
-          {!hoveredDay && <SearchBar value={search} onChange={setSearch} />}
+          {!dayProjectView && <SearchBar value={search} onChange={setSearch} />}
           <PortConflictBanner conflicts={portConflicts} />
 
           <div className="flex-1 overflow-y-auto show-scrollbar">
-            {hoveredDay ? (
-              <DayProjectList day={hoveredDay} search={search} />
+            {dayProjectView ? (
+              <DayProjectList day={dayProjectView} search={search} />
             ) : !hasRunning && !hasOffline && !isLoading ? (
               <EmptyState />
             ) : (
