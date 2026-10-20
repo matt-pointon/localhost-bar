@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { ChevronLeft, Search } from 'lucide-react'
+import { useMemo } from 'react'
+import { ChevronLeft } from 'lucide-react'
 
 const PROVIDER_COLORS: Record<string, string> = {
   anthropic: 'oklch(0.70 0.14 55)',
@@ -44,23 +44,10 @@ export function SessionsPanel({
   sessions: AgentSession[] | null
   onBack: () => void
 }) {
-  const [search, setSearch] = useState('')
-
-  const filtered = useMemo(() => {
-    if (!sessions) return []
-    const q = search.trim().toLowerCase()
-    if (!q) return sessions
-    return sessions.filter(s =>
-      [s.id, s.model ?? '', s.providerName, s.sourceLabel, s.project ?? '']
-        .join(' ')
-        .toLowerCase()
-        .includes(q)
-    )
-  }, [sessions, search])
-
+  const list = sessions ?? []
   const totalCost = useMemo(
-    () => filtered.reduce((sum, s) => sum + (s.estimatedCost ?? 0), 0),
-    [filtered]
+    () => list.reduce((sum, s) => sum + (s.estimatedCost ?? 0), 0),
+    [list]
   )
 
   return (
@@ -71,7 +58,7 @@ export function SessionsPanel({
           display: 'flex',
           alignItems: 'center',
           gap: 8,
-          padding: '12px 72px 6px 12px',
+          padding: '12px 72px 8px 12px',
           minHeight: 28
         }}
       >
@@ -104,44 +91,13 @@ export function SessionsPanel({
           }}
         >
           Agent Sessions
-          {sessions && ` · ${filtered.length}`}
-          {filtered.length > 0 && ` · ≈ ${fmtCost(totalCost)}`}
+          {sessions && ` · ${list.length}`}
+          {list.length > 0 && ` · ≈ ${fmtCost(totalCost)}`}
         </span>
       </div>
 
-      <div className="no-drag" style={{ padding: '2px 12px 8px' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '5px 8px',
-            borderRadius: 7,
-            background: 'var(--color-input-bg)',
-            border: '1px solid var(--color-border)'
-          }}
-        >
-          <Search size={11} style={{ color: 'var(--color-muted-foreground)', flexShrink: 0 }} />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search sessions, models, providers"
-            style={{
-              flex: 1,
-              minWidth: 0,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: 'var(--color-foreground)',
-              fontSize: 11.5,
-              fontFamily: 'inherit'
-            }}
-          />
-        </div>
-      </div>
-
       <div className="flex-1 overflow-y-auto show-scrollbar">
-        {filtered.map((s, i) => {
+        {list.map((s, i) => {
           const providerColor = PROVIDER_COLORS[s.providerSlug] ?? PROVIDER_COLORS.unknown
           return (
             <div
@@ -216,7 +172,7 @@ export function SessionsPanel({
           )
         })}
 
-        {sessions && filtered.length === 0 && (
+        {sessions && list.length === 0 && (
           <div
             style={{
               textAlign: 'center',
@@ -226,9 +182,8 @@ export function SessionsPanel({
               lineHeight: 1.6
             }}
           >
-            {sessions.length === 0
-              ? 'No local agent sessions yet. Sessions from Claude Code and Codex appear here once you use them.'
-              : `No sessions match “${search}”.`}
+            No local agent sessions yet. Sessions from Claude Code and Codex appear here once you
+            use them.
           </div>
         )}
       </div>
