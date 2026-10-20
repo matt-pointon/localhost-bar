@@ -1,5 +1,7 @@
-import { GitCommit, Folder } from 'lucide-react'
+import { GitCommit } from 'lucide-react'
 import { useState } from 'react'
+import { Folder } from 'lucide-react'
+import { IconButton } from './IconButton'
 
 function fmt(n: number): string {
   if (n >= 10_000) return `${(n / 1000).toFixed(0)}K`
@@ -24,8 +26,8 @@ export function DayProjectList({ day, search }: DayProjectListProps) {
       : 'No project activity on this day'
     return (
       <div style={{
-        padding: '8px 16px',
-        fontSize: 11, color: 'var(--color-muted-foreground)'
+        padding: '10px 16px',
+        fontSize: 11, color: 'var(--color-muted-foreground)', lineHeight: 1.4
       }}>
         {msg}
       </div>
@@ -33,7 +35,7 @@ export function DayProjectList({ day, search }: DayProjectListProps) {
   }
 
   return (
-    <div style={{ padding: '4px 0' }}>
+    <div style={{ padding: '2px 0 4px' }}>
       {projects.map(project => (
         <ProjectRow key={project.cwd} project={project} />
       ))}
@@ -43,11 +45,14 @@ export function DayProjectList({ day, search }: DayProjectListProps) {
 
 function ProjectRow({ project }: { project: DayProject }) {
   const [hovered, setHovered] = useState(false)
+  const [pressed, setPressed] = useState(false)
 
   return (
     <div
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={() => { setHovered(false); setPressed(false) }}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
       onClick={() => window.electronAPI.openFolder(project.cwd)}
       style={{
         position: 'relative',
@@ -56,18 +61,23 @@ function ProjectRow({ project }: { project: DayProject }) {
         alignItems: 'center',
         gap: 9,
         cursor: 'pointer',
-        background: hovered ? 'var(--color-hover-overlay)' : 'transparent',
-        transition: 'background 120ms ease',
+        background: pressed
+          ? 'var(--color-press-overlay)'
+          : hovered
+            ? 'var(--color-hover-overlay)'
+            : 'transparent',
+        transition: 'background var(--duration-fast) ease',
         borderRadius: 8,
-        margin: '0 6px'
+        margin: '0 8px'
       }}
     >
-      <GitCommit size={12} style={{ color: 'var(--color-status-running)', flexShrink: 0 }} />
+      <GitCommit size={12} style={{ color: 'var(--color-status-running)', flexShrink: 0, opacity: 0.9 }} />
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           fontSize: 12.5, fontWeight: 600, color: 'var(--color-foreground)',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.35
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          lineHeight: 1.35, letterSpacing: '-0.015em'
         }}>
           {project.name}
         </div>
@@ -75,11 +85,13 @@ function ProjectRow({ project }: { project: DayProject }) {
           fontSize: 10, color: 'var(--color-muted-foreground)', lineHeight: 1.4,
           display: 'flex', gap: 6, alignItems: 'center', marginTop: 2
         }}>
-          <span>{project.commits} commit{project.commits !== 1 ? 's' : ''}</span>
+          <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {project.commits} commit{project.commits !== 1 ? 's' : ''}
+          </span>
           {project.lines > 0 && (
             <>
               <span style={{ opacity: 0.3 }}>·</span>
-              <span>{fmt(project.lines)} lines</span>
+              <span style={{ fontVariantNumeric: 'tabular-nums' }}>{fmt(project.lines)} lines</span>
             </>
           )}
         </div>
@@ -97,25 +109,14 @@ function ProjectRow({ project }: { project: DayProject }) {
           paddingLeft: 24,
           opacity: hovered ? 1 : 0,
           pointerEvents: hovered ? 'auto' : 'none',
-          transition: 'opacity 120ms ease',
-          background: 'linear-gradient(to right, rgba(15,19,16,0) 0%, rgb(15,19,16) 28px)',
-          borderRadius: 8,
-          color: 'var(--color-muted-foreground)'
+          transition: 'opacity var(--duration-fast) ease',
+          background: 'linear-gradient(to right, transparent 0%, var(--color-row-fade) 28px)',
+          borderRadius: 8
         }}
       >
-        <button
-          onClick={() => window.electronAPI.openFolder(project.cwd)}
-          title="Open folder"
-          className="no-drag"
-          style={{
-            padding: 4, borderRadius: 6, border: 'none', background: 'transparent',
-            cursor: 'pointer', color: 'inherit', display: 'flex', alignItems: 'center'
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-hover-overlay)'; e.currentTarget.style.color = 'var(--color-foreground)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-muted-foreground)' }}
-        >
+        <IconButton title="Open folder" onClick={() => window.electronAPI.openFolder(project.cwd)}>
           <Folder size={13} />
-        </button>
+        </IconButton>
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { ChevronLeft } from 'lucide-react'
+import { IconButton } from '../components/IconButton'
 
 const PROVIDER_COLORS: Record<string, string> = {
   anthropic: 'oklch(0.70 0.14 55)',
@@ -57,39 +58,15 @@ export function SessionsPanel({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
-          padding: '12px 72px 8px 12px',
+          gap: 4,
+          padding: '12px 72px 8px 8px',
           minHeight: 28
         }}
       >
-        <button
-          className="no-drag"
-          onClick={onBack}
-          title="Back"
-          style={{
-            padding: 2,
-            borderRadius: 6,
-            border: 'none',
-            background: 'transparent',
-            cursor: 'pointer',
-            color: 'var(--color-muted-foreground)',
-            display: 'flex'
-          }}
-        >
+        <IconButton title="Back" onClick={() => onBack()}>
           <ChevronLeft size={14} />
-        </button>
-        <span
-          style={{
-            fontSize: 10,
-            fontWeight: 500,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            color: 'var(--color-muted-foreground)',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
-          }}
-        >
+        </IconButton>
+        <span className="section-label">
           Agent Sessions
           {sessions && ` · ${list.length}`}
           {list.length > 0 && ` · ≈ ${fmtCost(totalCost)}`}
@@ -124,7 +101,7 @@ export function SessionsPanel({
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                     fontSize: 11.5,
-                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                    fontFamily: 'var(--font-mono)',
                     color: s.model ? 'var(--color-foreground)' : 'var(--color-muted-foreground)'
                   }}
                 >
@@ -133,7 +110,8 @@ export function SessionsPanel({
                 <span
                   style={{
                     fontSize: 11.5,
-                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                    fontFamily: 'var(--font-mono)',
+                    fontVariantNumeric: 'tabular-nums',
                     color: s.estimatedCost === null ? 'var(--color-muted-foreground)' : 'var(--color-foreground)',
                     flexShrink: 0
                   }}
@@ -152,15 +130,11 @@ export function SessionsPanel({
                   overflow: 'hidden'
                 }}
               >
-                <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
-                  {fmtTime(s.lastRequest)}
-                </span>
+                <span style={{ fontFamily: 'var(--font-mono)' }}>{fmtTime(s.lastRequest)}</span>
                 <span>·</span>
                 <span>{s.sourceLabel}</span>
                 <span>·</span>
-                <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
-                  {shortId(s.id)}
-                </span>
+                <span style={{ fontFamily: 'var(--font-mono)' }}>{shortId(s.id)}</span>
                 {s.project && (
                   <>
                     <span>·</span>
