@@ -164,7 +164,7 @@ function SessionsTile({
 }) {
   return (
     <button
-      className="no-drag"
+      className="data-tile no-drag"
       onClick={onClick}
       title="View agent sessions"
       style={{
@@ -175,13 +175,9 @@ function SessionsTile({
         gap: 8,
         padding: '6px 10px',
         borderRadius: 8,
-        border: '1px solid var(--color-border)',
-        background: 'var(--color-input-bg)',
         cursor: 'pointer',
         textAlign: 'left'
       }}
-      onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-accent)' }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-input-bg)' }}
     >
       <Layers size={13} style={{ color: 'var(--color-status-ai)', flexShrink: 0 }} />
       <span style={{ fontSize: 11, color: 'var(--color-foreground)', fontWeight: 500, whiteSpace: 'nowrap' }}>

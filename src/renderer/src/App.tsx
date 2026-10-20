@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useServices } from './hooks/useServices'
 import { useDeployState } from './hooks/useDeployState'
 import { useStats } from './hooks/useStats'
@@ -23,6 +23,10 @@ export default function App() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const [hoveredDay, setHoveredDay] = useState<DayActivity | null>(null)
   const [view, setView] = useState<'home' | 'sessions'>('home')
+  const firstRenderRef = useRef(true)
+  useEffect(() => {
+    firstRenderRef.current = false
+  }, [])
   const { states: deployStates, deploy, setLastDeploy } = useDeployState()
 
   useEffect(() => {
@@ -109,6 +113,17 @@ export default function App() {
           display: 'flex'
         }}
       >
+        <div
+          key={view}
+          className={
+            firstRenderRef.current
+              ? undefined
+              : view === 'sessions'
+                ? 'view-enter-fwd'
+                : 'view-enter-back'
+          }
+          style={{ flex: 1, display: 'flex', minWidth: 0, height: '100%' }}
+        >
         {view === 'sessions' ? (
           <SessionsPanel sessions={sessions} onBack={() => setView('home')} />
         ) : (
@@ -201,6 +216,7 @@ export default function App() {
         </div>
         </>
         )}
+        </div>
       </div>
     </div>
   )
