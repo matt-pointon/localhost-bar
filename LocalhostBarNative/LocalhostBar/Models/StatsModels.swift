@@ -1,39 +1,24 @@
 import Foundation
 
-struct DayProject: Equatable, Identifiable {
-    var id: String { cwd }
-    let cwd: String
-    let name: String
-    let commits: Int
-    let lines: Int
-}
-
 struct DayActivity: Equatable, Identifiable {
     var id: String { date }
+    /// Local calendar day, yyyy-MM-dd.
     let date: String
     let commits: Int
     let lines: Int
-    let tokens: Int
-    let projects: [DayProject]
-
-    init(date: String, commits: Int, lines: Int, tokens: Int = 0, projects: [DayProject] = []) {
-        self.date = date
-        self.commits = commits
-        self.lines = lines
-        self.tokens = tokens
-        self.projects = projects
-    }
 }
 
 struct DailyStats: Equatable {
-    let commitsToday: Int
-    let linesChangedToday: Int
-    let tokensToday: Int
-    let streakDays: Int
+    /// Oldest first; the last entry is today.
     let history: [DayActivity]
-}
 
-struct ProjectRef: Equatable {
-    let cwd: String
-    let name: String
+    var today: DayActivity? { history.last }
+
+    /// Consecutive days with commits, ending today — or yesterday, so the streak
+    /// doesn't read as broken first thing in the morning.
+    var streakDays: Int {
+        var days = Array(history.reversed())
+        if days.first?.commits == 0 { days.removeFirst() }
+        return days.prefix { $0.commits > 0 }.count
+    }
 }
