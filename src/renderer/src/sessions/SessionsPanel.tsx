@@ -1,7 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ChevronLeft, Search } from 'lucide-react'
-
-const POLL_INTERVAL_MS = 30_000
 
 const PROVIDER_COLORS: Record<string, string> = {
   anthropic: 'oklch(0.70 0.14 55)',
@@ -39,16 +37,14 @@ function fmtCost(cost: number | null): string {
   return `$${cost.toFixed(2)}`
 }
 
-export function SessionsPanel({ onBack }: { onBack: () => void }) {
-  const [sessions, setSessions] = useState<AgentSession[] | null>(null)
+export function SessionsPanel({
+  sessions,
+  onBack
+}: {
+  sessions: AgentSession[] | null
+  onBack: () => void
+}) {
   const [search, setSearch] = useState('')
-
-  useEffect(() => {
-    const load = () => window.electronAPI.getSessions().then(setSessions).catch(() => setSessions([]))
-    load()
-    const id = setInterval(load, POLL_INTERVAL_MS)
-    return () => clearInterval(id)
-  }, [])
 
   const filtered = useMemo(() => {
     if (!sessions) return []

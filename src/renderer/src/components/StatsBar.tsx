@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { Share, Check } from 'lucide-react'
+import { Share, Check, Layers, ChevronRight } from 'lucide-react'
 import { localDateStr, localDateStrOffset } from '../../../shared/dates'
 
 function fmt(n: number): string {
@@ -8,16 +8,24 @@ function fmt(n: number): string {
   return n.toString()
 }
 
+function fmtCost(cost: number): string {
+  if (cost === 0) return '$0.00'
+  if (cost < 0.01) return `$${cost.toFixed(4)}`
+  return `$${cost.toFixed(2)}`
+}
+
 interface StatsBarProps {
   stats: DailyStats | null
   tokenStats: TokenStats | null
+  sessions: AgentSession[] | null
   serviceCount: number
   isLoading: boolean
   onRefresh: () => void
+  onOpenSessions: () => void
   onHoverDay?: (day: DayActivity | null) => void
 }
 
-export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh, onHoverDay }: StatsBarProps) {
+export function StatsBar({ stats, tokenStats, sessions, serviceCount, isLoading, onRefresh, onOpenSessions, onHoverDay }: StatsBarProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [shared, setShared] = useState(false)
   const [hoveredDate, setHoveredDate] = useState<string | null>(null)
@@ -67,6 +75,9 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
 
   const aiPercent = tokenStats?.cursor?.avgAiPercent ?? 0
 
+  const sessionCount = sessions?.length ?? 0
+  const sessionCost = sessions?.reduce((sum, s) => sum + (s.estimatedCost ?? 0), 0) ?? 0
+
   return (
     <div
       ref={containerRef}
@@ -82,7 +93,7 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
         </HeaderBtn>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 6 }}>
         {!isViewingToday && (
           <div style={{
             fontSize: 10, fontWeight: 600, color: 'var(--color-foreground)',
@@ -129,7 +140,81 @@ export function StatsBar({ stats, tokenStats, serviceCount, isLoading, onRefresh
         }}
         onSelectDate={setSelectedDate}
       />
+
+      <SessionsTile
+        count={sessionCount}
+        cost={sessionCost}
+        loading={sessions === null}
+        onClick={onOpenSessions}
+      />
     </div>
+  )
+}
+
+function SessionsTile({
+  count,
+  cost,
+  loading,
+  onClick
+}: {
+  count: number
+  cost: number
+  loading: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      className="no-drag"
+      onClick={onClick}
+      title="View agent sessions"
+      style={{
+        marginTop: 10,
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '6px 10px',
+        borderRadius: 8,
+        border: '1px solid var(--color-border)',
+        background: 'var(--color-input-bg)',
+        cursor: 'pointer',
+        textAlign: 'left'
+      }}
+      onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-accent)' }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-input-bg)' }}
+    >
+      <Layers size={13} style={{ color: 'var(--color-status-ai)', flexShrink: 0 }} />
+      <span style={{ fontSize: 11, color: 'var(--color-foreground)', fontWeight: 500, whiteSpace: 'nowrap' }}>
+        Agent Sessions
+      </span>
+      <span style={{ flex: 1 }} />
+      <span
+        style={{
+          fontFamily: "'Poppins', sans-serif",
+          fontWeight: 800,
+          fontSize: 13,
+          color: 'var(--color-foreground)',
+          letterSpacing: '-0.02em',
+          whiteSpace: 'nowrap'
+        }}
+      >
+        {loading ? '…' : count}
+        {!loading && count > 0 && (
+          <span
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 500,
+              fontSize: 10,
+              color: 'var(--color-muted-foreground)',
+              marginLeft: 5
+            }}
+          >
+            ≈ {fmtCost(cost)}
+          </span>
+        )}
+      </span>
+      <ChevronRight size={13} style={{ color: 'var(--color-muted-foreground)', flexShrink: 0 }} />
+    </button>
   )
 }
 

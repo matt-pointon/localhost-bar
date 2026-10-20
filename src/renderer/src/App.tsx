@@ -3,6 +3,7 @@ import { useServices } from './hooks/useServices'
 import { useDeployState } from './hooks/useDeployState'
 import { useStats } from './hooks/useStats'
 import { useTokenStats } from './hooks/useTokenStats'
+import { useSessions } from './hooks/useSessions'
 import { StatsBar } from './components/StatsBar'
 import { ServiceList } from './components/ServiceList'
 import { DayProjectList } from './components/DayProjectList'
@@ -13,7 +14,7 @@ import { PortConflictBanner } from './components/PortConflictBanner'
 import { SearchBar } from './components/SearchBar'
 import { SessionsPanel } from './sessions/SessionsPanel'
 import { localDateStr } from '../../shared/dates'
-import { X, Bell, BellOff, Layers } from 'lucide-react'
+import { X, Bell, BellOff } from 'lucide-react'
 import type { DetectedTool } from './components/QuickActionsMenu'
 
 export default function App() {
@@ -50,6 +51,7 @@ export default function App() {
   )
   const stats = useStats(projects)
   const tokenStats = useTokenStats()
+  const sessions = useSessions()
 
   const hasRunning = services.length > 0
   const hasOffline = offlineServices.length > 0
@@ -74,20 +76,6 @@ export default function App() {
       <GradientBackground />
 
       <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 20, display: 'flex', gap: 2 }}>
-        <button
-          className="no-drag"
-          onClick={() => setView(v => (v === 'sessions' ? 'home' : 'sessions'))}
-          title="Agent sessions"
-          style={{
-            padding: 4, borderRadius: 6, border: 'none',
-            background: view === 'sessions' ? 'var(--color-accent)' : 'transparent',
-            cursor: 'pointer',
-            color: view === 'sessions' ? 'var(--color-foreground)' : 'var(--color-muted-foreground)',
-            display: 'flex'
-          }}
-        >
-          <Layers size={12} />
-        </button>
         <button
           className="no-drag"
           onClick={toggleNotifications}
@@ -122,7 +110,7 @@ export default function App() {
         }}
       >
         {view === 'sessions' ? (
-          <SessionsPanel onBack={() => setView('home')} />
+          <SessionsPanel sessions={sessions} onBack={() => setView('home')} />
         ) : (
         <>
         <div
@@ -132,9 +120,11 @@ export default function App() {
           <StatsBar
             stats={stats}
             tokenStats={tokenStats}
+            sessions={sessions}
             serviceCount={services.length}
             isLoading={isLoading}
             onRefresh={refresh}
+            onOpenSessions={() => setView('sessions')}
             onHoverDay={setHoveredDay}
           />
         </div>
