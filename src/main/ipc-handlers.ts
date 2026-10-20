@@ -12,6 +12,7 @@ import { gitCommit, gitPull, gitCreatePR, isGhInstalled, getDefaultBranch } from
 import { getDailyStats } from './stats/collector'
 import type { ProjectRef } from './stats/collector'
 import { getTokenStats } from './token-stats'
+import { getAgentSessions } from './sessions'
 import { getSettings, setSettings, togglePin, setRename } from './settings'
 import { setNotificationsEnabled } from './notifications'
 import { getTasks, addTask, toggleTask, removeTask } from './tasks/store'
@@ -200,6 +201,10 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('stats:get-tokens', () => {
     return getTokenStats()
+  })
+
+  ipcMain.handle('sessions:get', () => {
+    return getAgentSessions()
   })
 
   ipcMain.handle('stats:share', async (event, { height }: { height: number }) => {

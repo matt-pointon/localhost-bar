@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useServices } from './hooks/useServices'
 import { useDeployState } from './hooks/useDeployState'
 import { useStats } from './hooks/useStats'
 import { useTokenStats } from './hooks/useTokenStats'
+import { useSessions } from './hooks/useSessions'
 import { StatsBar } from './components/StatsBar'
 import { ServiceList } from './components/ServiceList'
 import { DayProjectList } from './components/DayProjectList'
@@ -11,6 +12,7 @@ import { OfflineRow } from './components/OfflineRow'
 import { GradientBackground } from './components/GradientBackground'
 import { PortConflictBanner } from './components/PortConflictBanner'
 import { SearchBar } from './components/SearchBar'
+import { SessionsPanel } from './sessions/SessionsPanel'
 import { localDateStr } from '../../shared/dates'
 import { X, Bell, BellOff } from 'lucide-react'
 import type { DetectedTool } from './components/QuickActionsMenu'
@@ -20,6 +22,11 @@ export default function App() {
   const [search, setSearch] = useState('')
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const [hoveredDay, setHoveredDay] = useState<DayActivity | null>(null)
+  const [view, setView] = useState<'home' | 'sessions'>('home')
+  const firstRenderRef = useRef(true)
+  useEffect(() => {
+    firstRenderRef.current = false
+  }, [])
   const { states: deployStates, deploy, setLastDeploy } = useDeployState()
 
   useEffect(() => {
@@ -48,6 +55,7 @@ export default function App() {
   )
   const stats = useStats(projects)
   const tokenStats = useTokenStats()
+  const sessions = useSessions()
 
   const hasRunning = services.length > 0
   const hasOffline = offlineServices.length > 0
@@ -106,15 +114,32 @@ export default function App() {
         }}
       >
         <div
+          key={view}
+          className={
+            firstRenderRef.current
+              ? undefined
+              : view === 'sessions'
+                ? 'view-enter-fwd'
+                : 'view-enter-back'
+          }
+          style={{ flex: 1, display: 'flex', minWidth: 0, height: '100%' }}
+        >
+        {view === 'sessions' ? (
+          <SessionsPanel sessions={sessions} onBack={() => setView('home')} />
+        ) : (
+        <>
+        <div
           className="drag-region"
           style={{ width: '44%', overflow: 'hidden', flexShrink: 0, alignSelf: 'stretch' }}
         >
           <StatsBar
             stats={stats}
             tokenStats={tokenStats}
+            sessions={sessions}
             serviceCount={services.length}
             isLoading={isLoading}
             onRefresh={refresh}
+            onOpenSessions={() => setView('sessions')}
             onHoverDay={setHoveredDay}
           />
         </div>
@@ -188,6 +213,9 @@ export default function App() {
               </div>
             )}
           </div>
+        </div>
+        </>
+        )}
         </div>
       </div>
     </div>

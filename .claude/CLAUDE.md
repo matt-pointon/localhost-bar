@@ -53,6 +53,7 @@ src/
     deploy/                         # Vercel / Railway / Netlify integration
     stats/                          # Daily commits/lines/streak
     token-stats/                    # Cursor, Claude Desktop, Claude Code usage
+    sessions/                       # Unified agent sessions (Claude Code, Codex) + cost estimate
   preload/index.ts                  # contextBridge API
   renderer/src/
     App.tsx                         # Panel layout: stats + project list
@@ -64,6 +65,7 @@ src/
       ServiceList.tsx               # Service rows (git, tags, copy URL, tasks)
       QuickActionsMenu.tsx          # Deploy, git, open-in menu
       StatsBar.tsx                  # Heatmap + share
+      sessions/SessionsPanel.tsx    # In-panel agent sessions view (toggled from header)
       ToolIcons.tsx                 # Origin + active agent badges
       TaskList.tsx                  # Accordion checklist
       PortConflictBanner.tsx

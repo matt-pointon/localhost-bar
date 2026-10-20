@@ -5,6 +5,11 @@
   box-sizing: border-box;
 }
 
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -42,6 +47,53 @@ body {
 }
 .show-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* Sessions table rows */
+.session-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background 120ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .session-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+
+/* Clickable data tile (sessions entry point) */
+.data-tile {
+  background: var(--color-input-bg);
+  border: 1px solid var(--color-border);
+  transition: transform 160ms var(--ease-out), background 120ms ease;
+}
+.data-tile:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .data-tile:hover {
+    background: var(--color-accent);
+  }
+}
+
+/* Panel view swap (home <-> sessions): bridge the content teleport */
+@keyframes view-enter-fwd {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes view-enter-back {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.view-enter-fwd  { animation: view-enter-fwd  200ms var(--ease-out) both; }
+.view-enter-back { animation: view-enter-back 200ms var(--ease-out) both; }
+
+@keyframes view-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .view-enter-fwd,
+  .view-enter-back { animation: view-fade 200ms ease both; }
 }
 
 @keyframes row-enter {

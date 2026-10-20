@@ -123,6 +123,23 @@ export interface TokenStats {
   claudeCode: { prompts: number; sessions: number } | null
 }
 
+export interface AgentSession {
+  id: string
+  source: string
+  sourceLabel: string
+  project: string | null
+  cwd: string | null
+  model: string | null
+  providerSlug: string
+  providerName: string
+  lastRequest: number
+  requests: number
+  inputTokens: number
+  outputTokens: number
+  totalTokens: number
+  estimatedCost: number | null
+}
+
 export interface GitInfo {
   ghInstalled: boolean
   defaultBranch: string | null
@@ -154,6 +171,7 @@ export interface ElectronAPI {
   gitGetInfo: (cwd: string) => Promise<GitInfo>
   getDailyStats: (projects: ProjectRef[]) => Promise<DailyStats>
   getTokenStats: () => Promise<TokenStats>
+  getSessions: () => Promise<AgentSession[]>
   shareStats: (height: number) => Promise<{ success: boolean; error?: string }>
   getTasks: (cwd: string) => Promise<Task[]>
   addTask: (cwd: string, text: string) => Promise<{ success: boolean; tasks?: Task[]; error?: string }>
@@ -189,6 +207,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   getDailyStats: (projects: ProjectRef[]) => ipcRenderer.invoke('stats:get-daily', projects),
   getTokenStats: () => ipcRenderer.invoke('stats:get-tokens'),
+  getSessions: () => ipcRenderer.invoke('sessions:get'),
   shareStats: (height: number) => ipcRenderer.invoke('stats:share', { height }),
   getTasks: (cwd: string) => ipcRenderer.invoke('tasks:get', cwd),
   addTask: (cwd: string, text: string) => ipcRenderer.invoke('tasks:add', { cwd, text }),
