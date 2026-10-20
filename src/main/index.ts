@@ -28,7 +28,7 @@ app.whenReady().then(() => {
   initAutoUpdater()
 
   app.on('browser-window-created', (_, window) => {
-    optimizer.watchShortcuts(window)
+    optimizer.watchWindowShortcuts(window)
   })
 })
 
