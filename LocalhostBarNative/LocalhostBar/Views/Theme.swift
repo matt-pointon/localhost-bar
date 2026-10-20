@@ -24,12 +24,12 @@ enum Theme {
 
 extension View {
     /// Shared geometry for server rows, so names and ports line up with the header.
-    func rowChrome(hovered: Bool) -> some View {
+    func rowChrome(hovered: Bool, pressed: Bool = false) -> some View {
         padding(.horizontal, 10)
             .frame(height: Theme.rowHeight)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Theme.fill(hovered: hovered))
+                    .fill(Theme.fill(hovered: hovered, pressed: pressed))
             )
             .contentShape(Rectangle())
     }

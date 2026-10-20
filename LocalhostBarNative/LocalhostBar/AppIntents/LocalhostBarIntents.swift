@@ -67,7 +67,7 @@ struct OpenServerIntent: AppIntent {
     
     func perform() async throws -> some IntentResult {
         if let url = URL(string: "http://localhost:\(port)") {
-            await MainActor.run {
+            _ = await MainActor.run {
                 NSWorkspace.shared.open(url)
             }
         }

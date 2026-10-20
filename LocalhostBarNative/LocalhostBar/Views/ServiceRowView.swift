@@ -8,6 +8,7 @@ struct ServiceRowView: View {
     @EnvironmentObject private var scanner: PortScanner
     @EnvironmentObject private var tools: ToolRegistry
     @State private var hovered = false
+    @State private var pressed = false
 
     private var isStopping: Bool { service.status == .stopping }
 
@@ -34,16 +35,28 @@ struct ServiceRowView: View {
 
             PortLabel(port: service.port, highlighted: hovered && !isStopping)
         }
-        .rowChrome(hovered: hovered && !isStopping)
+        .rowChrome(hovered: hovered && !isStopping, pressed: pressed && !isStopping)
         .opacity(isStopping ? 0.5 : 1)
         .onHover { inside in
             withAnimation(Theme.snappy) { hovered = inside }
+            if !inside { pressed = false }
         }
-        .onTapGesture {
-            if !isStopping { NSWorkspace.shared.open(service.url) }
-        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in pressed = true }
+                .onEnded { _ in pressed = false }
+        )
+        .onTapGesture(perform: openInBrowser)
         .contextMenu { menu }
-        .help(Text(verbatim: "localhost:\(service.port)"))
+        .help(Text(verbatim: "Open localhost:\(service.port)"))
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { openInBrowser() }
+        .accessibilityAction(named: "Stop server") { scanner.stop(service) }
+    }
+
+    private func openInBrowser() {
+        if !isStopping { NSWorkspace.shared.open(service.url) }
     }
 
     private var subtitle: String {
@@ -114,9 +127,11 @@ struct OfflineRowView: View {
     @EnvironmentObject private var scanner: PortScanner
     @State private var hovered = false
 
+    private var isStarting: Bool { scanner.restarting.contains(service.id) }
+
     var body: some View {
         HStack(spacing: 10) {
-            StatusDot(kind: .stopped)
+            StatusDot(kind: isStarting ? .stopping : .stopped)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: service.name)
@@ -125,7 +140,7 @@ struct OfflineRowView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 TimelineView(.periodic(from: .now, by: 30)) { context in
-                    Text(verbatim: "Stopped \(Self.ago(service.exitedAt, now: context.date))")
+                    Text(verbatim: isStarting ? "Starting…" : "Stopped \(Self.ago(service.exitedAt, now: context.date))")
                         .font(Theme.meta)
                         .foregroundStyle(.tertiary)
                 }
@@ -133,7 +148,7 @@ struct OfflineRowView: View {
 
             Spacer(minLength: 8)
 
-            if hovered {
+            if hovered && !isStarting {
                 HStack(spacing: 2) {
                     IconButton(help: "Start again", action: { scanner.restart(service) }) {
                         Image(systemName: "arrow.clockwise").font(.system(size: 11, weight: .medium))
@@ -147,7 +162,7 @@ struct OfflineRowView: View {
 
             PortLabel(port: service.port, dimmed: true)
         }
-        .rowChrome(hovered: hovered)
+        .rowChrome(hovered: hovered && !isStarting)
         .onHover { inside in
             withAnimation(Theme.snappy) { hovered = inside }
         }

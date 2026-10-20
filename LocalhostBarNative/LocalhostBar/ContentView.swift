@@ -28,13 +28,6 @@ struct ContentView: View {
             Text("Localhost")
                 .font(.system(size: 13, weight: .semibold))
             Spacer()
-            if !scanner.services.isEmpty {
-                Text(verbatim: "\(scanner.services.count) running")
-                    .font(Theme.meta)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-            }
             PanelMenu()
         }
         .padding(.leading, Theme.inset)
@@ -129,6 +122,7 @@ struct PanelMenu: View {
         .menuIndicator(.hidden)
         .fixedSize()
         .help("More")
+        .accessibilityLabel("More")
     }
 
     private func setOpensAtLogin(_ enabled: Bool) {

@@ -6,21 +6,16 @@ Built entirely in **Swift + SwiftUI** for optimal performance, battery life, and
 
 ## Features
 
-### Core Features
-- **Port Scanning** - Automatically detects dev servers running on ports 1024-9999
-- **Project Names** - Infers project names from working directories
-- **Git Status** - Shows branch name, uncommitted changes, and last commit
-- **Resource Monitoring** - Displays CPU and memory usage per server
-- **Quick Actions** - Open in browser, Finder, VS Code, Cursor, terminals, and more
-- **Offline Tracking** - Remembers recently stopped servers for quick restart
-
-### macOS Native Integration
-- **Menu Bar App** - Lives in your menu bar, no dock icon
-- **Launch at Login** - Uses modern SMAppService API
-- **Siri Shortcuts** - "Show my servers", "Stop server on port 3000"
-- **Desktop Widget** - Glanceable server count widget
-- **System Appearance** - Automatic light/dark mode support
-- **Native App** - Swift/SwiftUI, no bundled browser runtime
+- **Auto-discovery** - Finds dev servers (node, bun, deno, python, ruby, …) listening on ports 1024–9999, every 3 seconds
+- **Project names** - The folder you'd type in a terminal (`acme-web`), or `repo/app` inside a monorepo
+- **Git status** - Branch and number of changed files per project
+- **One-click actions** - Click a row to open it in the browser; hover for "open in your editor" and stop; right-click for every installed editor, terminal and AI CLI (Claude Code, Codex)
+- **Stopped servers** - Servers that stop stay listed for a while with "Start again"
+- **Activity strip** - Your own commits over the last 30 days across every project that has run
+- **Menu bar count** - How many servers are running, without opening the panel
+- **Open at Login** - From the ⋯ menu (uses `SMAppService`)
+- **Shortcuts** - "How many servers are running", "Stop server on port 3000", …
+- **System appearance** - Follows light and dark mode
 
 ## Requirements
 
@@ -33,29 +28,28 @@ Built entirely in **Swift + SwiftUI** for optimal performance, battery life, and
 ```
 LocalhostBarNative/
 ├── LocalhostBar/
-│   ├── LocalhostBarApp.swift      # App entry point with MenuBarExtra
-│   ├── ContentView.swift          # Main popover content
-│   ├── Info.plist                 # App configuration (LSUIElement = true)
-│   ├── LocalhostBar.entitlements  # Sandbox entitlements
-│   ├── Assets.xcassets/           # App icons and menu bar icon
-│   ├── Models/
-│   │   ├── ServiceInfo.swift      # Server data model
-│   │   ├── GitStatus.swift        # Git status model
-│   │   └── DetectedTool.swift     # Tool detection model
+│   ├── LocalhostBarApp.swift      # MenuBarExtra entry point; starts scanning at launch
+│   ├── ContentView.swift          # The panel: header + ⋯ menu, server list, activity footer
+│   ├── LocalhostBar.entitlements  # Intentionally empty — see "Why it isn't sandboxed"
+│   ├── Models/                    # ServiceInfo, GitStatus, DetectedTool, stats
 │   ├── Services/
-│   │   ├── PortScanner.swift      # lsof-based port scanning
-│   │   ├── GitStatusProvider.swift # Git status fetching
-│   │   ├── ToolRegistry.swift     # Detect installed tools
-│   │   └── ToolLauncher.swift     # Open tools with AppleScript
+│   │   ├── Shell.swift            # Off-main subprocess runner + PATH for GUI apps
+│   │   ├── ScanParsing.swift      # Pure lsof/ps/git output parsers (unit-testable)
+│   │   ├── ServiceDiscovery.swift # lsof → processes → projects + git
+│   │   ├── PortScanner.swift      # Observable scan loop, stop/restart, stopped list
+│   │   ├── GitStatusProvider.swift# Cached branch/changes/repo root
+│   │   ├── StatsCollector.swift   # 30-day commit history from git log
+│   │   ├── StatsModel.swift       # Keeps the activity strip current
+│   │   ├── ToolRegistry.swift     # Installed editors/terminals/AI CLIs
+│   │   └── ToolLauncher.swift     # Opens a project in a tool
 │   ├── Views/
-│   │   ├── ServiceRowView.swift   # Individual server row
-│   │   ├── StatsView.swift        # Activity stats and heatmap
-│   │   ├── EmptyStateView.swift   # Empty state + offline rows
-│   │   └── SettingsView.swift     # Preferences window
+│   │   ├── Theme.swift            # Design tokens + shared primitives
+│   │   ├── ServiceRowView.swift   # Running and stopped rows
+│   │   ├── ActivityFooter.swift   # Commit strip
+│   │   └── EmptyStateView.swift   # Empty / loading / error states
 │   └── AppIntents/
-│       └── LocalhostBarIntents.swift # Siri Shortcuts
-├── LocalhostBarWidget/
-│   └── LocalhostBarWidget.swift   # WidgetKit widget
+│       └── LocalhostBarIntents.swift # Shortcuts
+├── LocalhostBarWidget/            # WidgetKit widget (not in the build yet)
 └── README.md
 ```
 
@@ -94,18 +88,17 @@ The bundle identifier (`com.localhostbar.app`) and deployment target (macOS 14.0
 - `LSApplicationCategoryType: public.app-category.developer-tools` - App Store category
 - `LSMinimumSystemVersion: 14.0` - Requires macOS Sonoma
 
-### Entitlements
+### Why it isn't sandboxed
 
-The app uses the App Sandbox with these entitlements:
-- `com.apple.security.app-sandbox` - Required for App Store
-- `com.apple.security.files.user-selected.read-write` - File access
-- `com.apple.security.network.client` - HTTP requests
-- `com.apple.security.automation.apple-events` - AppleScript for terminals
+`LocalhostBar.entitlements` is deliberately empty. The app has to list other apps'
+processes (`lsof`, `ps`) and run `git` inside your project folders. Under the App Sandbox
+those calls quietly return nothing — earlier builds had the sandbox on and showed an empty
+panel no matter what was running. Hardened Runtime stays on.
 
 ## App Intents (Siri Shortcuts)
 
 The app provides these shortcuts:
-- **"Show my servers"** - Opens the menu bar popover
+- **"Show my servers"** - Launches Localhost Bar
 - **"How many servers are running"** - Returns server count
 - **"Stop server on port [port]"** - Kills a specific server
 - **"Open server on port [port]"** - Opens in browser
@@ -120,30 +113,11 @@ A WidgetKit extension (`LocalhostBarWidget/`) is included in the source and show
 > default build produces the menu-bar app only. Uncomment and configure signing for the widget
 > target to include it.
 
-## App Store Submission
+## Distribution
 
-### Checklist
-
-- [ ] App icons (all sizes in Assets.xcassets)
-- [ ] Menu bar icon (template image)
-- [ ] Screenshots for App Store
-- [ ] App preview video
-- [ ] Localization (minimum: en, ja, de, fr)
-- [ ] Privacy policy URL
-- [ ] App Store description
-- [ ] Keywords
-
-### Featuring Nomination
-
-To be considered for featuring on the Mac App Store:
-
-1. Go to App Store Connect > Featuring Nominations
-2. Submit 2-3 months before launch
-3. Highlight:
-   - Native Swift/SwiftUI implementation
-   - Shortcuts and Widget integration
-   - Developer tools category innovation
-   - Accessibility support
+The Mac App Store requires the App Sandbox, which this app can't work inside (see above),
+so it ships as a DMG instead. For a build other people can open without a Gatekeeper
+warning, sign with a Developer ID certificate and notarize it.
 
 ## License
 

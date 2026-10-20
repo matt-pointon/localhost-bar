@@ -10,6 +10,8 @@ final class PortScanner: ObservableObject {
     /// False until the first scan finishes — lets the panel tell "loading" from "nothing running".
     @Published private(set) var hasScanned = false
     @Published private(set) var scanFailed = false
+    /// Stopped servers we've just asked to start; they leave the list once they're back.
+    @Published private(set) var restarting: Set<String> = []
 
     private var timer: Timer?
     private var isScanning = false
@@ -118,10 +120,13 @@ final class PortScanner: ObservableObject {
         process.standardError = FileHandle.nullDevice
 
         guard (try? process.run()) != nil else { return }
-        offlineServices.removeAll { $0.id == service.id }
+        restarting.insert(service.id)
         Task {
             try? await Task.sleep(for: .seconds(2))
             await scan()
+            // Still not back after a while → show it as stopped again rather than vanish.
+            try? await Task.sleep(for: .seconds(13))
+            restarting.remove(service.id)
         }
     }
 
