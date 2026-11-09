@@ -4,6 +4,14 @@ A native macOS menu bar app that shows running localhost development servers wit
 
 Built entirely in **Swift + SwiftUI** for optimal performance, battery life, and deep macOS integration.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../docs/images/localhost-bar-dark.png">
+  <img alt="The Localhost Bar panel with three running servers, one stopped server and a 30-day commit strip" src="../docs/images/localhost-bar-light.png" width="500">
+</picture>
+
+The design rationale is in the root README's [Design notes](../README.md#design-notes); the tokens
+live in [`Views/Theme.swift`](LocalhostBar/Views/Theme.swift).
+
 ## Features
 
 - **Auto-discovery** - Finds dev servers (node, bun, deno, python, ruby, …) listening on ports 1024–9999, every 3 seconds

@@ -2,12 +2,15 @@
 
 See every dev server you're running, and jump back into it in one click — from the macOS menu bar.
 
-![Localhost Bar panel](docs/images/hero.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/localhost-bar-dark.png">
+  <img alt="The Localhost Bar panel: three running dev servers with branch and port, one stopped server, and a 30-day commit strip" src="docs/images/localhost-bar-light.png" width="500">
+</picture>
 
 <!--
-  The image above is a real capture from `LB_DEMO=1 npm run dev` running in a Linux dev
-  environment, so macOS menu-bar vibrancy isn't rendered. Replace it with a macOS screenshot
-  or a short GIF of the panel when capturing on a Mac.
+  Rendered from an HTML replica of the native SwiftUI panel (same sizes, type scale,
+  colors and copy) with example data, because the image was made off-Mac. Swap in a real
+  macOS capture of the panel when one is available.
 -->
 
 
@@ -60,11 +63,15 @@ feature listed above. See [`.claude/CLAUDE.md`](.claude/CLAUDE.md) for the full 
 A native rewrite in Swift + SwiftUI ([PR #5](https://github.com/matt-pointon/localhost-bar/pull/5))
 that trades breadth for deep macOS integration:
 
-- `MenuBarExtra`-based menu-bar app (`LSUIElement`, no dock icon)
-- `lsof`-based port scanning, git status, and quick actions
-- Launch at login via the modern `SMAppService` API
-- Siri Shortcuts through App Intents ("Show my servers", "Stop server on port 3000", …)
-- Localized in English, German, French, and Japanese
+- `MenuBarExtra`-based menu-bar app (`LSUIElement`, no dock icon) that shows the running
+  server count next to its icon
+- A single-column panel: servers first, a 30-day commit strip underneath (see
+  [Design notes](#design-notes))
+- `lsof`-based port scanning, git status, and quick actions, all off the main thread
+- Open at Login via the modern `SMAppService` API, from the panel's ⋯ menu
+- Shortcuts through App Intents ("How many servers are running", "Stop server on port 3000", …)
+- Not sandboxed, on purpose: the App Sandbox hides other processes from `lsof`, which made
+  earlier builds show an empty panel
 - A WidgetKit widget target lives in the source (`LocalhostBarWidget/`) but is currently
   commented out of the XcodeGen build — see [`LocalhostBarNative/project.yml`](LocalhostBarNative/project.yml).
 
@@ -114,7 +121,30 @@ CI mirrors this flow — `xcodegen generate` followed by `xcodebuild` on `macos-
 
 ## Design notes
 
-Localhost Bar is deliberately a small, dense surface, so the visual details carry the feel:
+### Native app
+
+The panel exists to answer one question: what's running, and how do I get back to it? Everything
+else is quieter than that.
+
+- **Servers first.** A 340pt column of rows, 44pt tall: a status dot, the folder name as you'd type
+  it (`acme-web`, or `acme/web` in a monorepo), the branch with its changed-file count, and the port
+  in one right-aligned column of tabular figures.
+- **Actions on demand.** Click a row to open it in the browser (an arrow appears next to the port
+  on hover). Hover shows two buttons: open in your most recently used editor, shown with its real
+  app icon, and stop. Right-click lists every installed editor, terminal and AI CLI. Settings live
+  in a ⋯ menu instead of a separate window.
+- **Undo over confirm.** Stopping takes one click, because the server moves to a "Stopped" list
+  with "Start again", which shows "Starting…" until the server is back.
+- **History stays small.** Thirty days of your own commits sit in a 24pt bar strip at the bottom.
+  Hovering a day rewrites the summary line next to it, and nothing else on the panel moves.
+- **A small vocabulary.** Three type sizes (13 / 12 / 11), weight for hierarchy, sentence case, one
+  8pt corner radius, one 180ms "snappy" spring, and neutral colors that follow light and dark
+  mode. Green only ever means *running*. All of it lives in
+  [`Views/Theme.swift`](LocalhostBarNative/LocalhostBar/Views/Theme.swift).
+
+### Electron app
+
+The Electron app (`/src`) is a small, dense surface, so the visual details carry the feel:
 
 - **8pt grid + crisp retina values** — spacing and sizing were reworked onto an 8-point grid
   ([PR #11](https://github.com/matt-pointon/localhost-bar/pull/11)).
